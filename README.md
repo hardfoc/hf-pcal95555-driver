@@ -11,8 +11,8 @@ permalink: /
 
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI](https://github.com/N3b3x/hf-pcal95555-driver/actions/workflows/esp32-examples-build-ci.yml/badge.svg?branch=main)](https://github.com/N3b3x/hf-pcal95555-driver/actions/workflows/esp32-examples-build-ci.yml)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://n3b3x.github.io/hf-pcal95555-driver/)
+[![CI](https://github.com/hardfoc/hf-pcal95555-driver/actions/workflows/esp32-examples-build-ci.yml/badge.svg?branch=main)](https://github.com/hardfoc/hf-pcal95555-driver/actions/workflows/esp32-examples-build-ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://hardfoc.github.io/hf-pcal95555-driver/)
 
 ---
 
@@ -37,7 +37,7 @@ permalink: /
 ---
 
 ## 📦 Overview
-> **📖 [📚🌐 Live Complete Documentation](https://n3b3x.github.io/hf-pcal95555-driver/)** —
+> **📖 [📚🌐 Live Complete Documentation](https://hardfoc.github.io/hf-pcal95555-driver/)** —
 > Interactive guides, examples, and step-by-step tutorials
 
 The **PCA9555** and **PCAL9555A** are 16-bit I/O expanders from NXP Semiconductors
@@ -212,7 +212,7 @@ cp -r src/ /path/to/your/project/drivers/pcal95555/
 
 ### Method 2: Git submodule
 ```bash
-git submodule add https://github.com/N3b3x/hf-pcal95555-driver.git lib/pcal95555
+git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git lib/pcal95555
 ```
 
 ### Method 3: ESP-IDF component (recommended for ESP32)
