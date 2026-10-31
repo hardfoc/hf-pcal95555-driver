@@ -78,7 +78,7 @@
   },"11": {
     "doc": "HardFOC PCAL95555 Driver",
     "title": "Method 2: Git submodule",
-    "content": "| 1 . | git submodule add https://github.com/N3b3x/hf-pcal95555-driver.git lib/pcal95555 . | . ",
+    "content": "| 1 . | git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git lib/pcal95555 . | . ",
     "url": "/hf-pcal95555-driver/development/#method-2-git-submodule",
     
     "relUrl": "/#method-2-git-submodule"
@@ -519,7 +519,7 @@
   },"74": {
     "doc": "⚙️ CMake Integration",
     "title": "Option A — Git Submodule (recommended)",
-    "content": "| 1 2 3 . | # From your project root git submodule add https://github.com/N3b3x/hf-pcal95555-driver.git external/hf-pcal95555-driver git submodule update --init --recursive . | . In your top-level CMakeLists.txt: . | 1 2 3 4 . | add_subdirectory(external/hf-pcal95555-driver) add_executable(my_app main.cpp) target_link_libraries(my_app PRIVATE hf::pcal95555) . | . The hf::pcal95555 alias target provides the header include paths, C++20 compile feature, and generated version header automatically. ",
+    "content": "| 1 2 3 . | # From your project root git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git external/hf-pcal95555-driver git submodule update --init --recursive . | . In your top-level CMakeLists.txt: . | 1 2 3 4 . | add_subdirectory(external/hf-pcal95555-driver) add_executable(my_app main.cpp) target_link_libraries(my_app PRIVATE hf::pcal95555) . | . The hf::pcal95555 alias target provides the header include paths, C++20 compile feature, and generated version header automatically. ",
     "url": "/hf-pcal95555-driver/development/docs/cmake_integration/#option-a--git-submodule-recommended",
     
     "relUrl": "/docs/cmake_integration/#option-a--git-submodule-recommended"
@@ -1107,7 +1107,7 @@
   },"158": {
     "doc": "🛠️ Installation",
     "title": "Option 2: Git Submodule",
-    "content": "| 1 2 . | cd your-project git submodule add https://github.com/N3b3x/hf-pcal95555-driver.git drivers/pcal95555 . | . Then add to your include path: . | 1 . | target_include_directories(your_target PRIVATE drivers/pcal95555/inc) . | . ",
+    "content": "| 1 2 . | cd your-project git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git drivers/pcal95555 . | . Then add to your include path: . | 1 . | target_include_directories(your_target PRIVATE drivers/pcal95555/inc) . | . ",
     "url": "/hf-pcal95555-driver/development/docs/installation/#option-2-git-submodule",
     
     "relUrl": "/docs/installation/#option-2-git-submodule"
