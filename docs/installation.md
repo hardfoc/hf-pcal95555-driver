@@ -41,7 +41,7 @@ src/
 
 ```bash
 cd your-project
-git submodule add https://github.com/N3b3x/hf-pcal95555-driver.git drivers/pcal95555
+git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git drivers/pcal95555
 ```
 
 Then add to your include path:

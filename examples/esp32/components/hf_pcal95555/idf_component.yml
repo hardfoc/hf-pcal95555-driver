@@ -8,8 +8,8 @@ maintainers:
 license: "GPL-3.0"
 
 url: https://www.nxp.com/docs/en/data-sheet/PCAL9555A.pdf
-repository: https://github.com/N3b3x/hf-pcal95555-driver
-issues: https://github.com/N3b3x/hf-pcal95555-driver/issues
+repository: https://github.com/hardfoc/hf-pcal95555-driver
+issues: https://github.com/hardfoc/hf-pcal95555-driver/issues
 
 targets:
   - esp32

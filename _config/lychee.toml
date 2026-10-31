@@ -63,7 +63,7 @@ exclude = [
   '^https://n3b3x\.github\.io/hf-pcal95555-driver/.*',
   
   # GitHub Actions badge URLs that may not exist yet
-  '^https://github\.com/N3b3x/hf-pcal95555-driver/actions/workflows/.*',
+  '^https://github\.com/hardfoc/hf-pcal95555-driver/actions/workflows/.*',
 
   # NXP — datasheet/product URLs often 404 or redirect from CI; README links kept for humans
   '^https?://(www\.)?nxp\.com/',
