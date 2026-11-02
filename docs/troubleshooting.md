@@ -19,7 +19,7 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `GetChipVariant()` is `Unknown` | The read after the probe failed: the bus did not recover from the NACK | Fix bus recovery in the port, or pass the variant ([PCA9555 and PCAL9555A](variants.md)) |
+| `EnsureInitialized()` fails although the chip answers | The read after the detection probe failed: the bus did not recover from the NACK | Fix bus recovery in the port, or pass the variant ([PCA9555 and PCAL9555A](variants.md)) |
 | A PCA9555 is reported as `PCAL9555A` | The port returns `true` for a NACK | Return `false` on every NACK ([Porting](porting.md)) |
 | Agile I/O calls fail with `UnsupportedFeature` | The part is a PCA9555, or detection failed | Read the marking (PCAL9555A vs PCA9555); check `GetChipVariant()` |
 
@@ -32,7 +32,7 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 | An input reads inverted | Polarity inversion set on that pin | `SetPinPolarity(pin, Polarity::Normal)` |
 | A floating input reads high on a PCAL9555A | The 100 kΩ pull-up is on at power-up | `SetPullEnable(pin, false)` or `SetPullDirection(pin, false)` |
 | An open-drain output never goes high | No pull-up on the line; internal pulls are disconnected in open-drain mode | Add an external pull-up |
-| `ReadPin()` returns `false` for a high pin | The read failed | Check `HasError(Error::I2CReadFail)` |
+| `ReadPin()` returns `false` for a high pin | The read failed | Use `ReadPin(pin, level)`, which returns `false` only on a failed read, or check `HasError(Error::I2CReadFail)` |
 | Pin settings lost after `InitFromConfig()` | Its compile-time defaults (all pulls off, all outputs low) were applied | Define the `CONFIG_PCAL95555_*` macros ([Configuration](configuration.md)) |
 
 ## Interrupts do not arrive
@@ -51,5 +51,5 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `pcal95555_version.h` not found | The include path lacks the generated directory | Link the `hf::pcal95555` target instead of adding `inc/` by hand |
-| `GPIODir` or `Error` not found in `pcal95555::` | They are declared at global scope | Write `GPIODir::Output`, not `pcal95555::GPIODir::Output` |
+| `GPIODir` or `Error` not found, or clashes with another library's `Error` | Global aliases dropped with `HF_PCAL95555_NO_GLOBAL_ALIASES`, or old global names colliding | Write `pcal95555::GPIODir::Output`, and define `HF_PCAL95555_NO_GLOBAL_ALIASES` to remove the global names |
 | Errors about C++20 features | The target compiles with an older standard | `hf::pcal95555` requires `cxx_std_20`; check the toolchain supports it |

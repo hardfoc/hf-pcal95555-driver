@@ -55,9 +55,12 @@ that you can also define directly, for example with `target_compile_definitions(
     before calling it, or call only `ResetToDefault()`.
 
 !!! note "ESP-IDF menuconfig"
-    The ESP-IDF component wrapper in `examples/esp32/components/hf_pcal95555/` does not include the root `Kconfig`,
-    so `idf.py menuconfig` does not show these options and `sdkconfig` does not define them. Until it does, set the
-    macros with compile definitions. `CONFIG_PCAL95555_DEFAULT_ADDRESS` in `Kconfig` is not read by the driver.
+    The ESP-IDF component wrapper in `examples/esp32/components/hf_pcal95555/` sources the root `Kconfig`, so
+    `idf.py menuconfig` shows the options under **PCAL95555 GPIO expander** and the driver reads them from
+    `sdkconfig.h`. A bool set to `n` is absent from `sdkconfig.h`; while that menu is enabled
+    (`CONFIG_PCAL95555` defined) the driver reads an absent option as `0`, not as the default above. If you copy
+    the component elsewhere, keep its `Kconfig` pointing at the driver's root `Kconfig`.
+    `CONFIG_PCAL95555_DEFAULT_ADDRESS` in `Kconfig` is not read by the driver.
 
 ## Run-time settings
 

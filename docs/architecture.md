@@ -81,9 +81,10 @@ the port type, so the port's version is the one that runs.
   register read can run the driver ([Hardware](hardware.md#bus-settings)).
 - **Sticky error flags.** Calls return `bool`; the flags say why, and stay set until cleared or until a later
   success of the same kind clears its own flag.
-- **Static staging bytes.** Register transfers go through function-local static buffers, kept in internal RAM for
-  MCUs whose I2C DMA cannot reach the stack. As a consequence, two driver objects must not run calls at the same
-  time from different threads (see [Porting](porting.md#threads)).
+- **Per-object transfer byte.** Every register transfer passes the bus a byte that lives in the driver object, not
+  on the caller's stack, for MCUs whose I2C DMA cannot reach task stacks: place the driver object in DMA-capable
+  RAM on such parts. Each object has its own byte, so drivers for different chips are independent
+  (see [Porting](porting.md#threads)).
 
 ## Source map
 

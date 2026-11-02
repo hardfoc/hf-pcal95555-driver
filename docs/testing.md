@@ -18,16 +18,18 @@ ctest --test-dir build-host --output-on-failure
 
 | File | Covers |
 | --- | --- |
-| [`tests/test_driver.cpp`](../tests/test_driver.cpp) | Variant detection, address mapping and clamping, port-register bit placement, drive-strength encoding, pull / latch / output-mode registers, `ResetToDefault()`, interrupt callbacks on both parts, multi-pin calls, error flags |
-| [`tests/mock_pcal95555.hpp`](../tests/mock_pcal95555.hpp) | The PCA9555 / PCAL9555A register model |
+| [`tests/test_driver.cpp`](../tests/test_driver.cpp) | Variant detection, address mapping and clamping, port-register bit placement, drive-strength encoding, pull / latch / output-mode registers, `ResetToDefault()`, interrupt callbacks on both parts, multi-pin calls, error flags, inconclusive detection, `ReadPin(pin, level)`, empty masks, independent driver objects |
+| [`tests/test_kconfig.cpp`](../tests/test_kconfig.cpp) | `InitFromConfig()` with an ESP-IDF style [`sdkconfig.h`](../tests/kconfig/sdkconfig.h), including bools set to `n` |
+| [`tests/install/`](../tests/install/main.cpp) | CTest `hf_pcal95555_install`: `cmake --install` into a scratch prefix, then a `find_package(hf_pcal95555)` consumer builds and runs against it |
+| [`tests/mock_pcal95555.hpp`](../tests/mock_pcal95555.hpp) | The PCA9555 / PCAL9555A register model, with fault injection (failed reads, a bus stuck after the probe NACK, code run mid-transfer) |
 | [`tests/test_harness.hpp`](../tests/test_harness.hpp), [`tests/test_main.cpp`](../tests/test_main.cpp) | A dependency-free test registry and runner |
 
 ## Documentation snippets
 
-Every C++ block on this site is included from [`tests/docs/`](../tests/docs/my_i2c.hpp), which the host build
-compiles (target `hf_pcal95555_doc_snippets`, `-Wall -Wextra`) with the driver instantiated over the documented
-port. A change to the API that breaks a page breaks the build first. The README's example is a copy of the
-Quickstart snippet that `hardfoc-docs check` keeps in step.
+Every C++ block on this site is included from [`tests/docs/`](../tests/docs/my_i2c.hpp), which the host build compiles
+(target `hf_pcal95555_doc_snippets`, `-Wall -Wextra`, with `HF_PCAL95555_NO_GLOBAL_ALIASES` so the pages use the
+namespaced names) with the driver instantiated over the documented port. A change to the API that breaks a page breaks
+the build first. The README's example is a copy of the Quickstart snippet that `hardfoc-docs check` keeps in step.
 
 ## CI workflows
 

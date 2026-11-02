@@ -37,8 +37,8 @@ int led_follows_button(MyI2c& bus) {
     return -1;                                        // wiring, pull-ups or address
   }
 
-  gpio.SetPinDirection(0, GPIODir::Output);           // 2. P0_0 drives an LED
-  gpio.SetPinDirection(8, GPIODir::Input);            //    P1_0 reads a button
+  gpio.SetPinDirection(0, pcal95555::GPIODir::Output);  // 2. P0_0 drives an LED
+  gpio.SetPinDirection(8, pcal95555::GPIODir::Input);   //    P1_0 reads a button
 
   const bool pressed = !gpio.ReadPin(8);              // 3. button pulls the pin low
   if (!gpio.WritePin(0, pressed)) {                   // 4. LED on while pressed

@@ -55,6 +55,9 @@ add_library(hf::pcal95555 ALIAS ${HF_PCAL95555_TARGET_NAME})
 #   cmake/hf_pcal95555_build_settings.cmake (single source of truth)
 #===============================================================================
 set_target_properties(${HF_PCAL95555_TARGET_NAME} PROPERTIES VERSION ${HF_PCAL95555_VERSION} SOVERSION ${HF_PCAL95555_VERSION_MAJOR})
+# find_package(hf_pcal95555) consumers get the same name as in-tree builds: hf::pcal95555
+# (the export NAMESPACE is hf::, so without this the imported target would be hf::hf_pcal95555).
+set_target_properties(${HF_PCAL95555_TARGET_NAME} PROPERTIES EXPORT_NAME pcal95555)
 
 #===============================================================================
 # Optional: Enable extra warnings (can be toggled by user)
@@ -96,6 +99,8 @@ install(TARGETS ${HF_PCAL95555_TARGET_NAME} EXPORT hf_pcal95555Targets
 install(DIRECTORY inc/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" PATTERN "*.h.in" EXCLUDE)
 install(FILES "${HF_PCAL95555_VERSION_HEADER}" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# pcal95555.hpp includes the template implementation; without it an installed header does not compile.
+install(FILES src/pcal95555.ipp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT hf_pcal95555Targets
     FILE hf_pcal95555Targets.cmake

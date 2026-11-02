@@ -26,7 +26,7 @@ The base class uses CRTP: the calls are resolved at compile time, so there are n
 | `Read(addr, reg, data, len)` | yes | Write `reg`, repeated START, read `len` bytes, STOP. The driver always passes `len = 1`. Return `false` on a NACK or timeout |
 | `SetAddressPins(a0, a1, a2)` | no | Drive A0-A2 from MCU GPIOs, if the board wires them; the default returns `false` |
 | `RegisterInterruptHandler(handler)` | no | Keep `handler` and run it from a task when INT falls; the default returns `false` |
-| `GpioSet(pin, signal)`, `GpioRead(pin, signal)` | no | Control-pin hooks of the HardFOC interface model; this driver does not call them, since neither chip has a reset pin |
+| `GpioSet(pin, signal)`, `GpioRead(pin, signal)` | no | Control-pin hooks of the HardFOC interface model; this driver does not call them, since neither chip has a reset pin. `CtrlPin::RSTN` is deprecated for the same reason |
 
 `addr` is the 7-bit address (0x20 to 0x27); your SDK may want it shifted left by one.
 
@@ -69,6 +69,7 @@ Start from it for any ESP-IDF target.
 
 ## Threads
 
-The driver is not thread-safe, and register transfers share function-local static buffers across all driver
-objects of the same port type. Give every expander on a port type one owner task, or guard every driver call with
-one mutex shared by all of them. Callbacks run in the task that calls `HandleInterrupt()`.
+One driver object is not thread-safe: give each expander one owner task, or guard its calls with a mutex.
+Driver objects share no state, so two expanders can be driven from two tasks without a common lock, as long as
+your port's `Read()` / `Write()` serialise access to a shared bus. Callbacks run in the task that calls
+`HandleInterrupt()`.

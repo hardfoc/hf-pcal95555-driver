@@ -1,0 +1,5 @@
+# ESP-IDF reads Kconfig only from the component directory. The driver's options live in the
+# repository-root Kconfig (shared with non-example consumers), so source it from here; idf.py
+# menuconfig then shows "PCAL95555 GPIO expander" and sdkconfig.h defines the CONFIG_PCAL95555_*
+# macros that InitFromConfig() reads.
+rsource "../../../../Kconfig"

@@ -67,6 +67,31 @@ TEST_CASE("a missing device fails initialisation with I2CReadFail") {
   CHECK(drv.HasError(Error::I2CReadFail));
 }
 
+TEST_CASE("an inconclusive variant probe fails initialisation and is retried") {
+  // PCAL9555A Rev. 2 table 4: command bytes 40h-4Fh exist only on the PCAL9555A, so the probe of 4Fh
+  // NACKs on a PCA9555. If the bus then fails the next read too, the parts cannot be told apart.
+  MockPcal95555 bus(false);
+  bus.nackReadsAfterProbe(1);
+  Driver drv(&bus, uint8_t{0x20});
+  CHECK(!drv.EnsureInitialized());
+  CHECK(drv.HasError(Error::I2CReadFail));
+  CHECK(drv.GetChipVariant() == ChipVariant::Unknown);
+  bus.nackReadsAfterProbe(0);
+  REQUIRE(drv.EnsureInitialized()); // the next call probes again
+  CHECK(drv.GetChipVariant() == ChipVariant::PCA9555);
+  CHECK(!drv.HasError(Error::I2CReadFail));
+}
+
+TEST_CASE("ChangeAddress fails when the variant probe at the new address is inconclusive") {
+  MockPcal95555 bus(false);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.setAddress(0x21);
+  bus.nackReadsAfterProbe(1);
+  CHECK(!drv.ChangeAddress(uint8_t{0x21}));
+  CHECK(drv.GetChipVariant() == ChipVariant::Unknown);
+}
+
 TEST_CASE("direction, output and polarity bits land in the right port register") {
   MockPcal95555 bus(true);
   Driver drv(&bus, uint8_t{0x20});
@@ -90,6 +115,71 @@ TEST_CASE("reads return the input level after polarity inversion") {
   CHECK_EQ(drv.ReadAllInputs(), 0x0101);
   CHECK(drv.SetPinPolarity(0, Polarity::Inverted));
   CHECK(!drv.ReadPin(0));
+}
+
+TEST_CASE("ReadPin(pin, level) tells a low pin from a failed read") {
+  MockPcal95555 bus(true);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.setPins(0x0000);
+  bool level = true;
+  CHECK(drv.ReadPin(3, level)); // low pin: the read worked
+  CHECK(!level);
+  bus.setPins(0x0008);
+  bus.nackNextReads(2); // both attempts of the default single retry fail
+  level = false;
+  CHECK(!drv.ReadPin(3, level)); // failed read: reported, level untouched
+  CHECK(!level);
+  CHECK(drv.HasError(Error::I2CReadFail));
+  CHECK(drv.ReadPin(3, level));
+  CHECK(level);
+  bool bad = false;
+  CHECK(!drv.ReadPin(16, bad));
+  CHECK(drv.HasError(Error::InvalidPin));
+}
+
+TEST_CASE("an empty mask sets InvalidMask and sends nothing") {
+  MockPcal95555 bus(true);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.clearLog();
+  CHECK(!drv.SetMultipleDirections(0, GPIODir::Output));
+  CHECK(!drv.SetMultipleOutputs(0, true));
+  CHECK(!drv.SetMultiplePolarities(0, Polarity::Inverted));
+  CHECK(!drv.EnableMultipleInputLatches(0, true));
+  CHECK(drv.HasError(Error::InvalidMask));
+  CHECK_EQ(bus.log().size(), 0U);
+  CHECK(drv.SetMultipleOutputs(0x0001, true)); // a valid mask clears the flag
+  CHECK(!drv.HasError(Error::InvalidMask));
+}
+
+TEST_CASE("two drivers of one bus type do not share transfer buffers") {
+  // Two chips on two buses, the second driver used while a read of the first is in flight (another
+  // task preempting it). Each driver must get its own chip's Input Port value.
+  MockPcal95555 bus_a(true);
+  MockPcal95555 bus_b(true);
+  Driver a(&bus_a, uint8_t{0x20});
+  Driver b(&bus_b, uint8_t{0x20});
+  REQUIRE(a.EnsureInitialized());
+  REQUIRE(b.EnsureInitialized());
+  bus_a.setPins(0x00A5);
+  bus_b.setPins(0x5A00);
+  uint16_t seen_by_b = 0;
+  bus_a.setReadHook([&](uint8_t) { seen_by_b = b.ReadAllInputs(); });
+  CHECK_EQ(a.ReadAllInputs(), 0x00A5);
+  CHECK_EQ(seen_by_b, 0x5A00);
+
+  uint16_t raw_b = 0;
+  bus_a.setReadHook([&](uint8_t) { (void)b.ReadDualPortRegister(0x00, 0x01, raw_b); });
+  uint16_t raw_a = 0;
+  CHECK(a.ReadDualPortRegister(0x00, 0x01, raw_a));
+  CHECK_EQ(raw_a, 0x00A5);
+  CHECK_EQ(raw_b, 0x5A00);
+
+  bool level = false;
+  bus_a.setReadHook([&](uint8_t) { (void)b.ReadPin(0); });
+  CHECK(a.ReadPin(0, level));
+  CHECK(level);
 }
 
 TEST_CASE("invalid pins set InvalidPin and send nothing") {

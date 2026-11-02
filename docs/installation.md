@@ -29,7 +29,9 @@ target_link_libraries(my_app PRIVATE hf::pcal95555)
 
 `hf::pcal95555` is an alias of the `hf_pcal95555` INTERFACE target. It carries the include directories (`inc/` and
 the generated version header) and requires C++20 (`cxx_std_20`), so your target does not need to set either.
-`find_package(hf_pcal95555)` works after `cmake --install`.
+`find_package(hf_pcal95555)` works after `cmake --install` and gives the same `hf::pcal95555` target; the install
+puts `pcal95555.hpp`, `pcal95555.ipp` (the template implementation) and the generated `pcal95555_version.h` in
+`include/`.
 
 | Option | Default | Effect |
 | --- | --- | --- |

@@ -7,7 +7,15 @@
 #include <cstdio>
 
 using Gpio = pcal95555::PCAL95555<MyI2c>;
+// The examples below use these names unqualified; every driver type lives in namespace pcal95555.
 using pcal95555::ChipVariant;
+using pcal95555::DriveStrength;
+using pcal95555::Error;
+using pcal95555::GPIODir;
+using pcal95555::InterruptEdge;
+using pcal95555::InterruptState;
+using pcal95555::Pcal95555Reg;
+using pcal95555::Polarity;
 
 // --8<-- [start:init]
 bool bring_up(Gpio& gpio) {
@@ -44,7 +52,11 @@ bool drive_outputs(Gpio& gpio) {
 
 // --8<-- [start:read]
 void read_inputs(Gpio& gpio) {
-  const bool button = gpio.ReadPin(8);         // false on a bus error too
+  bool button = false;
+  if (!gpio.ReadPin(8, button)) {              // false: the read failed, button untouched
+    std::printf("pin 8: read failed\n");
+  }
+  const bool led = gpio.ReadPin(0);            // shorthand: false on a bus error too
   const uint16_t all = gpio.ReadAllInputs();   // bit N = pin N
   const auto some = gpio.ReadPins({8, 9, 10});
   for (const auto& [pin, level] : some) {
@@ -54,6 +66,7 @@ void read_inputs(Gpio& gpio) {
     std::printf("read failed\n");
   }
   (void)button;
+  (void)led;
   (void)all;
 }
 // --8<-- [end:read]

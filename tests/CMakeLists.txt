@@ -12,7 +12,12 @@
 add_executable(hf_pcal95555_host_tests
   test_main.cpp
   test_driver.cpp
+  test_kconfig.cpp
 )
+
+# Only test_kconfig.cpp sees the stand-in sdkconfig.h.
+set_source_files_properties(test_kconfig.cpp PROPERTIES
+  INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/kconfig)
 
 target_link_libraries(hf_pcal95555_host_tests PRIVATE ${HF_PCAL95555_TARGET_NAME})
 target_include_directories(hf_pcal95555_host_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -33,3 +38,13 @@ target_link_libraries(hf_pcal95555_doc_snippets PRIVATE ${HF_PCAL95555_TARGET_NA
 target_include_directories(hf_pcal95555_doc_snippets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/docs)
 target_compile_features(hf_pcal95555_doc_snippets PRIVATE cxx_std_20)
 target_compile_options(hf_pcal95555_doc_snippets PRIVATE -Wall -Wextra)
+target_compile_definitions(hf_pcal95555_doc_snippets PRIVATE HF_PCAL95555_NO_GLOBAL_ALIASES)
+
+# Install rules: install into a scratch prefix and build a find_package() consumer against it.
+add_test(NAME hf_pcal95555_install
+  COMMAND ${CMAKE_COMMAND}
+    -DBUILD_DIR=${CMAKE_BINARY_DIR}
+    -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+    -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/install-test
+    -DCXX=${CMAKE_CXX_COMPILER}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/install/run_install_test.cmake)

@@ -18,6 +18,8 @@
 #include "pcal95555_kconfig.hpp"
 #include "pcal95555_version.h"
 
+namespace pcal95555 {
+
 /** PCAL95555 register map (all control registers). */
 /**
  * @enum Pcal95555Reg
@@ -101,7 +103,7 @@ enum class InterruptState : uint8_t {
 enum class Error : uint16_t {
   None = 0,
   InvalidPin = 1 << 0,          ///< Provided pin index out of range
-  InvalidMask = 1 << 1,         ///< Mask contained bits outside 0-15
+  InvalidMask = 1 << 1,         ///< A mask-form call got a mask that selects no pin (0)
   I2CReadFail = 1 << 2,         ///< An I2C read operation failed
   I2CWriteFail = 1 << 3,        ///< An I2C write operation failed
   UnsupportedFeature = 1 << 4,  ///< Feature requires PCAL9555A but chip is PCA9555
@@ -120,8 +122,6 @@ inline constexpr Error operator&(Error lhs, Error rhs) noexcept {
 inline constexpr Error operator~(Error e) noexcept {
   return static_cast<Error>(~static_cast<uint16_t>(e));
 }
-
-namespace pcal95555 {
 
 /**
  * @brief Fixed-capacity result container for multi-pin read operations.
@@ -430,7 +430,8 @@ public:
    *
    * @param mask Bitmask where each set bit indicates a pin to configure.
    * @param dir Common direction for all selected pins.
-   * @return true on success; false if any I2C operation fails.
+   * @return true on success; false if any I2C operation fails; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin directions,
    *       prefer SetDirections() which works with pin numbers directly.
@@ -458,8 +459,26 @@ public:
    *
    * @param pin Zero-based pin index (0-15).
    * @return true if pin is high; false if pin is low or on read error.
+   *
+   * @note A low pin and a failed read both return false. Use
+   *       ReadPin(uint8_t, bool&) when the difference matters.
    */
   bool ReadPin(uint8_t pin) noexcept;
+
+  /**
+   * @brief Read the logical level of a GPIO pin and report whether the read worked.
+   *
+   * @param pin   Zero-based pin index (0-15).
+   * @param level Receives the level (true = high) on success; unchanged on failure.
+   * @return true if the Input Port register was read; false on an invalid pin
+   *         (Error::InvalidPin) or an I2C failure (Error::I2CReadFail).
+   *
+   * @code
+   *   bool level = false;
+   *   if (!driver.ReadPin(8, level)) { handle_bus_error(); }
+   * @endcode
+   */
+  bool ReadPin(uint8_t pin, bool& level) noexcept;
 
   /**
    * @brief Write a logical level to a GPIO output pin.
@@ -480,7 +499,8 @@ public:
    *
    * @param mask  Bitmask where each set bit indicates a pin to modify.
    * @param value Common output level for all selected pins (true=HIGH, false=LOW).
-   * @return true on success; false if any I2C operation fails.
+   * @return true on success; false if any I2C operation fails; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @example
    *   // Set pins 0, 2, 4 HIGH in one call
@@ -762,7 +782,8 @@ public:
    *
    * @param mask Bitmask selecting pins to configure.
    * @param polarity Normal or Inverted for all selected pins.
-   * @return true on success; false on any I2C failure.
+   * @return true on success; false on any I2C failure; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin polarities,
    *       prefer SetPolarities() which works with pin numbers directly.
@@ -800,7 +821,8 @@ public:
    *
    * @param mask Bitmask selecting pins.
    * @param enable true to enable; false to disable.
-   * @return true on success; false on any I2C failure.
+   * @return true on success; false on any I2C failure; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin settings,
    *       prefer EnableInputLatches() which works with pin numbers directly.
@@ -1028,7 +1050,10 @@ public:
    * internal state.
    *
    * @return true if initialization succeeded or was already initialized;
-   *         false if initialization failed.
+   *         false if initialization failed: the device did not answer, or
+   *         auto-detection could not tell a PCA9555 from a PCAL9555A (the bus
+   *         did not answer the read after the probe). Both set
+   *         Error::I2CReadFail; the next call tries again.
    *
    * @note This method is automatically called by methods that require initialization.
    *       You can also call it explicitly to verify initialization before use.
@@ -1106,6 +1131,7 @@ private:
   bool a2_level_;
   ChipVariant chip_variant_{ChipVariant::Unknown};  // Detected or user-specified chip variant
   ChipVariant user_variant_{ChipVariant::Unknown};  // User-requested variant (for skipping detection)
+  uint8_t xfer_byte_{0};  // Bus transfer byte: lives in the driver object, one per chip
 
   /**
    * @brief Calculate I2C address from A2-A0 bits.
@@ -1200,14 +1226,28 @@ private:
    * If step 2 succeeds the chip is PCAL9555A.
    * If step 2 NACKs but step 3 succeeds the chip is a standard PCA9555.
    * If step 3 also fails the detection is inconclusive (bus error).
+   *
+   * @return true when a variant was identified; false when it is left Unknown
+   *         (initialisation and ChangeAddress() then fail).
    */
-  void detectChipVariant() noexcept;
+  bool detectChipVariant() noexcept;
 };
 
 // Include template implementation
 #define PCAL95555_HEADER_INCLUDED
+// Source tree: inc/../src/pcal95555.ipp. Installed tree: the .ipp sits next to this header.
+#if defined(__has_include)
+#if __has_include("../src/pcal95555.ipp")
 // NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
 #include "../src/pcal95555.ipp"
+#else
+// NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
+#include "pcal95555.ipp"
+#endif
+#else
+// NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
+#include "../src/pcal95555.ipp"
+#endif
 #undef PCAL95555_HEADER_INCLUDED
 
 
@@ -1217,3 +1257,25 @@ inline const char* GetDriverVersion() noexcept {
 }
 
 } // namespace pcal95555
+
+// ---------------------------------------------------------------------------
+// Deprecated global-scope names
+// ---------------------------------------------------------------------------
+// Up to 1.0.0 these types were declared in the global namespace, where names
+// such as Error and Polarity collide with other libraries. They now live in
+// namespace pcal95555; the aliases below keep old code compiling and will be
+// removed in the next major version. Define HF_PCAL95555_NO_GLOBAL_ALIASES to
+// drop them now.
+#ifndef HF_PCAL95555_NO_GLOBAL_ALIASES
+using Pcal95555Reg = pcal95555::Pcal95555Reg;  // deprecated: use pcal95555::Pcal95555Reg
+using GPIODir = pcal95555::GPIODir;  // deprecated: use pcal95555::GPIODir
+using Polarity = pcal95555::Polarity;  // deprecated: use pcal95555::Polarity
+using DriveStrength = pcal95555::DriveStrength;  // deprecated: use pcal95555::DriveStrength
+using OutputMode = pcal95555::OutputMode;  // deprecated: use pcal95555::OutputMode
+using InterruptEdge = pcal95555::InterruptEdge;  // deprecated: use pcal95555::InterruptEdge
+using InterruptState = pcal95555::InterruptState;  // deprecated: use pcal95555::InterruptState
+using Error = pcal95555::Error;  // deprecated: use pcal95555::Error
+using pcal95555::operator|;
+using pcal95555::operator&;
+using pcal95555::operator~;
+#endif

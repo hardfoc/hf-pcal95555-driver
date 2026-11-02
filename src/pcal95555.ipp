@@ -6,11 +6,10 @@
 #ifndef PCAL95555_IMPL
 #define PCAL95555_IMPL
 
-// When included from header, use relative path; when compiled directly, use standard include
-#ifdef PCAL95555_HEADER_INCLUDED
-#include "../inc/pcal95555.hpp"
-#else
-#include "../inc/pcal95555.hpp"
+// Normally included by pcal95555.hpp (inside namespace pcal95555). Opened on its own (an IDE or a
+// linter), pull in the header first; the installed tree has no ../inc, so use the include path.
+#ifndef PCAL95555_HEADER_INCLUDED
+#include "pcal95555.hpp"
 #endif
 
 // Constructor: store I2C bus and pin levels (lazy initialization)
@@ -126,8 +125,14 @@ bool pcal95555::PCAL95555<I2cType>::initialize() noexcept {
     // User specified variant - skip auto-detection
     chip_variant_ = user_variant_;
   } else {
-    // Auto-detect by probing an Agile I/O register
-    detectChipVariant();
+    // Auto-detect by probing an Agile I/O register. An inconclusive probe (the bus did not answer
+    // the read after it) leaves the variant unknown: fail so the next call retries instead of
+    // running with no feature set.
+    if (!detectChipVariant()) {
+      setError(Error::I2CReadFail);
+      initialized_ = false;
+      return false;
+    }
   }
   
   // Initialize previous pin states for edge detection
@@ -147,14 +152,13 @@ void pcal95555::PCAL95555<I2cType>::SetRetries(int retries) noexcept {
 // Low-level write with retries
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::writeRegister(uint8_t reg, uint8_t value) noexcept {
-  /* Stage the payload in TU static storage before the I2C write.
-   * Callers may pass a stack/external-RAM byte; some MCU memory maps do not
-   * reliably support single-byte loads from those regions into the bus DMA
-   * path, so the adapter always reads from internal SRAM/.bss. */
-  static uint8_t s_byte = 0;
-  s_byte = value;
+  /* Stage the payload in this driver object's transfer byte, not the caller's
+   * stack: on some MCU memory maps task stacks sit outside the memory the bus
+   * DMA can read. One byte per driver object (not a function-local static),
+   * so drivers for different chips do not overwrite each other's transfers. */
+  xfer_byte_ = value;
   for (int attempt = 0; attempt <= retries_; ++attempt) {
-    if (i2c_->Write(dev_addr_, reg, &s_byte, 1)) {
+    if (i2c_->Write(dev_addr_, reg, &xfer_byte_, 1)) {
       clearError(Error::I2CWriteFail);
       return true;
     }
@@ -165,11 +169,10 @@ bool pcal95555::PCAL95555<I2cType>::writeRegister(uint8_t reg, uint8_t value) no
 // Low-level read with retries
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::readRegister(uint8_t reg, uint8_t& value) noexcept {
-  static uint8_t s_byte = 0;
   for (int attempt = 0; attempt <= retries_; ++attempt) {
-    if (i2c_->Read(dev_addr_, reg, &s_byte, 1)) {
+    if (i2c_->Read(dev_addr_, reg, &xfer_byte_, 1)) {
       clearError(Error::I2CReadFail);
-      value = s_byte;
+      value = xfer_byte_;
       return true;
     }
   }
@@ -257,18 +260,17 @@ static inline uint8_t updateBit(uint8_t regVal, uint8_t bit, bool set) noexcept 
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::readDualPort(uint8_t reg0, uint8_t reg1,
                                                   uint8_t& val0, uint8_t& val1) noexcept {
-  /* Dual-port assemble in TU static storage (not caller stack / external RAM).
-   * Keeps both port bytes coherent for R-M-W and avoids single-byte load
-   * hazards on MCU maps where task stacks sit outside tightly-coupled SRAM. */
-  static uint8_t s_ports[2] = {0, 0};
-  if (!readRegister(reg0, s_ports[0])) {
+  /* The bus transfer itself goes through xfer_byte_ (see readRegister). */
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  if (!readRegister(reg0, port0)) {
     return false;
   }
-  if (!readRegister(reg1, s_ports[1])) {
+  if (!readRegister(reg1, port1)) {
     return false;
   }
-  val0 = s_ports[0];
-  val1 = s_ports[1];
+  val0 = port0;
+  val1 = port1;
   return true;
 }
 
@@ -338,6 +340,10 @@ bool pcal95555::PCAL95555<I2cType>::SetMultipleDirections(uint16_t mask, GPIODir
   if (!EnsureInitialized()) {
     return false;
   }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
+    return false;
+  }
   clearError(Error::InvalidMask);
   return modifyDualPortByMask(static_cast<uint8_t>(Pcal95555Reg::CONFIG_PORT_0),
                                static_cast<uint8_t>(Pcal95555Reg::CONFIG_PORT_1),
@@ -376,6 +382,14 @@ bool pcal95555::PCAL95555<I2cType>::SetDirections(std::initializer_list<std::pai
 // Read input port registers and return bit
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin) noexcept {
+  bool level = false;
+  (void)ReadPin(pin, level);
+  return level;
+}
+
+// Read one pin, reporting success separately from the level
+template <typename I2cType>
+bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin, bool& level) noexcept {
   if (!EnsureInitialized()) {
     return false;
   }
@@ -386,13 +400,12 @@ bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin) noexcept {
   clearError(Error::InvalidPin);
   uint8_t reg = (pin < 8) ? static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0) : static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1);
   uint8_t bit = pin % 8;
-  /* Read into TU static storage, then mask. Avoids relying on a stack-local
-   * receive byte when the I2C adapter may only safely touch internal SRAM. */
-  static uint8_t s_val = 0;
-  if (!readRegister(reg, s_val)) {
+  uint8_t val = 0;
+  if (!readRegister(reg, val)) {
     return false;
   }
-  return (s_val & (1 << bit)) != 0;
+  level = (val & (1 << bit)) != 0;
+  return true;
 }
 
 // Write output port registers
@@ -415,6 +428,10 @@ bool pcal95555::PCAL95555<I2cType>::WritePin(uint8_t pin, bool value) noexcept {
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::SetMultipleOutputs(uint16_t mask, bool value) noexcept {
   if (!EnsureInitialized()) {
+    return false;
+  }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
     return false;
   }
   clearError(Error::InvalidMask);
@@ -927,11 +944,11 @@ bool pcal95555::PCAL95555<I2cType>::RegisterInterruptHandler() noexcept {
 // Read current pin states (private helper)
 template <typename I2cType>
 uint16_t pcal95555::PCAL95555<I2cType>::readPinStates() noexcept {
-  /* Assemble both INPUT ports in TU static storage (see readDualPort). */
-  static uint8_t s_ports[2] = {0, 0};
-  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), s_ports[0]);
-  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1), s_ports[1]);
-  return (uint16_t(s_ports[1]) << 8) | s_ports[0];
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), port0);
+  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1), port1);
+  return static_cast<uint16_t>((uint16_t(port1) << 8) | port0);
 }
 
 // Read all 16 pin input states (public API)
@@ -950,13 +967,13 @@ bool pcal95555::PCAL95555<I2cType>::ReadDualPortRegister(uint8_t reg0, uint8_t r
   if (!EnsureInitialized()) {
     return false;
   }
-  /* Assemble through readDualPort’s static staging buffers. */
-  static uint8_t s_ports[2] = {0, 0};
-  if (!readDualPort(reg0, reg1, s_ports[0], s_ports[1])) {
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  if (!readDualPort(reg0, reg1, port0, port1)) {
     return false;
   }
-  value = static_cast<uint16_t>(s_ports[0]) |
-          static_cast<uint16_t>(static_cast<uint16_t>(s_ports[1]) << 8);
+  value = static_cast<uint16_t>(port0) |
+          static_cast<uint16_t>(static_cast<uint16_t>(port1) << 8);
   return true;
 }
 
@@ -1060,6 +1077,11 @@ bool pcal95555::PCAL95555<I2cType>::SetMultiplePolarities(uint16_t mask, Polarit
   if (!EnsureInitialized()) {
     return false;
   }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
+    return false;
+  }
+  clearError(Error::InvalidMask);
   return modifyDualPortByMask(static_cast<uint8_t>(Pcal95555Reg::POLARITY_INV_0),
                                static_cast<uint8_t>(Pcal95555Reg::POLARITY_INV_1),
                                mask, (polarity == Polarity::Inverted));
@@ -1112,6 +1134,10 @@ bool pcal95555::PCAL95555<I2cType>::EnableInputLatch(uint8_t pin, bool enable) n
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::EnableMultipleInputLatches(uint16_t mask, bool enable) noexcept {
   if (!EnsureInitialized() || !requireAgileIO()) {
+    return false;
+  }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
     return false;
   }
   clearError(Error::InvalidMask);
@@ -1209,10 +1235,11 @@ bool pcal95555::PCAL95555<I2cType>::requireAgileIO() noexcept {
 // Detect chip variant by probing OUTPUT_CONF register (0x4F)
 // Uses a 3-step sandwich: standard read -> probe -> standard read
 template <typename I2cType>
-void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
+bool pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
   // Use single-shot (no retries) for the probe to avoid spamming the bus
   int saved_retries = retries_;
   retries_ = 0;
+  chip_variant_ = ChipVariant::Unknown;
 
   uint8_t dummy = 0;
 
@@ -1220,7 +1247,7 @@ void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
   if (!readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), dummy)) {
     // Bus is not working at all - leave variant as Unknown
     retries_ = saved_retries;
-    return;
+    return false;
   }
   clearError(Error::I2CReadFail);
 
@@ -1255,6 +1282,7 @@ void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
 
   // Restore retries
   retries_ = saved_retries;
+  return chip_variant_ != ChipVariant::Unknown;
 }
 
 // Get current I2C address
@@ -1304,10 +1332,12 @@ bool pcal95555::PCAL95555<I2cType>::changeAddressImpl(uint8_t new_bits) noexcept
   clearError(Error::InvalidAddress);
 
   // Re-detect chip variant at new address
+  chip_variant_ = ChipVariant::Unknown;
   if (user_variant_ != ChipVariant::Unknown) {
     chip_variant_ = user_variant_;
-  } else {
-    detectChipVariant();
+  } else if (!detectChipVariant()) {
+    setError(Error::I2CReadFail);
+    return false;
   }
 
   initialized_ = true;

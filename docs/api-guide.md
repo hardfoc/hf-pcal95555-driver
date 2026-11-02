@@ -30,9 +30,11 @@ P1_7 (port 1). Most settings come in three forms:
 | Raw registers | `ReadDualPortRegister()`, `WriteDualPortRegister()` |
 | Errors | `GetErrorFlags()`, `HasError()`, `HasAnyError()`, `ClearError()`, `ClearErrorFlags()` |
 
-The pin enums (`GPIODir`, `Polarity`, `DriveStrength`, `InterruptState`, `InterruptEdge`), `Error` and the register
-map `Pcal95555Reg` are declared at global scope by `pcal95555.hpp`; `PCAL95555`, `ChipVariant`, `PinReadResult` and
-`I2cInterface` are in namespace `pcal95555`.
+Every type is in namespace `pcal95555`: `PCAL95555`, `ChipVariant`, `PinReadResult`, `I2cInterface`, the pin enums
+(`GPIODir`, `Polarity`, `DriveStrength`, `InterruptState`, `InterruptEdge`), `Error` and the register map
+`Pcal95555Reg`; the snippets bring them in with `using pcal95555::GPIODir;` and so on. Up to 1.0.0 the pin enums,
+`Error` and `Pcal95555Reg` were global. Deprecated global aliases still accept the old spelling; define
+`HF_PCAL95555_NO_GLOBAL_ALIASES` to drop them (they go in the next major version).
 
 ## Bring the chip up
 
@@ -69,10 +71,11 @@ measured level.
 --8<-- "tests/docs/api_tasks.cpp:read"
 ```
 
-`ReadPin()` returns `false` both for a low pin and for a failed read, and `ReadAllInputs()` returns 0 on failure;
-check `HasError(Error::I2CReadFail)` when it matters. `ReadPins()` returns a `PinReadResult`: up to 16
-`(pin, level)` pairs in the order you asked for them, iterable, with `contains()` and `find()`. Reading an output
-pin returns the level on the pin.
+`ReadPin(pin, level)` returns whether the read worked and puts the level in `level`. The one-argument `ReadPin(pin)`
+returns the level alone, so a failed read looks like a low pin; `ReadAllInputs()` returns 0 on failure. After those,
+check `HasError(Error::I2CReadFail)` when it matters. `ReadPins()` returns a `PinReadResult`: up to 16 `(pin, level)`
+pairs in the order you asked for them, iterable, with `contains()` and `find()`. Reading an output pin returns the level
+on the pin.
 
 ## Use Agile I/O (PCAL9555A)
 
@@ -134,7 +137,7 @@ from 0x40 up NACKs and sets the I2C error flag.
 | `Error::InvalidPin` | A pin above 15 | The next call with a valid pin |
 | `Error::UnsupportedFeature` | An Agile I/O call on a PCA9555 (or an undetected variant) | `ClearError()` / `ClearErrorFlags()` |
 | `Error::InvalidAddress` | `ChangeAddress(address)` outside 0x20 to 0x27 | A successful `ChangeAddress()` |
-| `Error::InvalidMask` | Declared; no call sets it at present | |
+| `Error::InvalidMask` | A mask-form call (`SetMultipleDirections()`, `SetMultipleOutputs()`, `SetMultiplePolarities()`, `EnableMultipleInputLatches()`) got a mask of 0; nothing is sent | The next of those calls with a non-zero mask |
 
 `GetErrorFlags()` returns the flags as a `uint16_t`; `HasError()` tests one, `ClearErrorFlags(mask)` clears the
 bits in `mask` (all by default).
