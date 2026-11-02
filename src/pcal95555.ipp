@@ -382,6 +382,14 @@ bool pcal95555::PCAL95555<I2cType>::SetDirections(std::initializer_list<std::pai
 // Read input port registers and return bit
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin) noexcept {
+  bool level = false;
+  (void)ReadPin(pin, level);
+  return level;
+}
+
+// Read one pin, reporting success separately from the level
+template <typename I2cType>
+bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin, bool& level) noexcept {
   if (!EnsureInitialized()) {
     return false;
   }
@@ -392,13 +400,12 @@ bool pcal95555::PCAL95555<I2cType>::ReadPin(uint8_t pin) noexcept {
   clearError(Error::InvalidPin);
   uint8_t reg = (pin < 8) ? static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0) : static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1);
   uint8_t bit = pin % 8;
-  /* Read into TU static storage, then mask. Avoids relying on a stack-local
-   * receive byte when the I2C adapter may only safely touch internal SRAM. */
-  static uint8_t s_val = 0;
-  if (!readRegister(reg, s_val)) {
+  uint8_t val = 0;
+  if (!readRegister(reg, val)) {
     return false;
   }
-  return (s_val & (1 << bit)) != 0;
+  level = (val & (1 << bit)) != 0;
+  return true;
 }
 
 // Write output port registers

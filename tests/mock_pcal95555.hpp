@@ -133,6 +133,10 @@ public:
   void nackReadsAfterProbe(int n) noexcept {
     nack_after_probe_ = n;
   }
+  /// Fail the next @p n reads (a device that stops answering).
+  void nackNextReads(int n) noexcept {
+    nack_reads_ = n;
+  }
   /// Called at the start of every Read() with the register; lets a test run code mid-transfer.
   void setReadHook(std::function<void(uint8_t)> hook) {
     read_hook_ = std::move(hook);

@@ -458,8 +458,26 @@ public:
    *
    * @param pin Zero-based pin index (0-15).
    * @return true if pin is high; false if pin is low or on read error.
+   *
+   * @note A low pin and a failed read both return false. Use
+   *       ReadPin(uint8_t, bool&) when the difference matters.
    */
   bool ReadPin(uint8_t pin) noexcept;
+
+  /**
+   * @brief Read the logical level of a GPIO pin and report whether the read worked.
+   *
+   * @param pin   Zero-based pin index (0-15).
+   * @param level Receives the level (true = high) on success; unchanged on failure.
+   * @return true if the Input Port register was read; false on an invalid pin
+   *         (Error::InvalidPin) or an I2C failure (Error::I2CReadFail).
+   *
+   * @code
+   *   bool level = false;
+   *   if (!driver.ReadPin(8, level)) { handle_bus_error(); }
+   * @endcode
+   */
+  bool ReadPin(uint8_t pin, bool& level) noexcept;
 
   /**
    * @brief Write a logical level to a GPIO output pin.

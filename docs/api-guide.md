@@ -69,8 +69,9 @@ measured level.
 --8<-- "tests/docs/api_tasks.cpp:read"
 ```
 
-`ReadPin()` returns `false` both for a low pin and for a failed read, and `ReadAllInputs()` returns 0 on failure;
-check `HasError(Error::I2CReadFail)` when it matters. `ReadPins()` returns a `PinReadResult`: up to 16
+`ReadPin(pin, level)` returns whether the read worked and puts the level in `level`. The one-argument
+`ReadPin(pin)` returns the level alone, so a failed read looks like a low pin; `ReadAllInputs()` returns 0 on
+failure. After those, check `HasError(Error::I2CReadFail)` when it matters. `ReadPins()` returns a `PinReadResult`: up to 16
 `(pin, level)` pairs in the order you asked for them, iterable, with `contains()` and `find()`. Reading an output
 pin returns the level on the pin.
 

@@ -32,7 +32,7 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 | An input reads inverted | Polarity inversion set on that pin | `SetPinPolarity(pin, Polarity::Normal)` |
 | A floating input reads high on a PCAL9555A | The 100 kΩ pull-up is on at power-up | `SetPullEnable(pin, false)` or `SetPullDirection(pin, false)` |
 | An open-drain output never goes high | No pull-up on the line; internal pulls are disconnected in open-drain mode | Add an external pull-up |
-| `ReadPin()` returns `false` for a high pin | The read failed | Check `HasError(Error::I2CReadFail)` |
+| `ReadPin()` returns `false` for a high pin | The read failed | Use `ReadPin(pin, level)`, which returns `false` only on a failed read, or check `HasError(Error::I2CReadFail)` |
 | Pin settings lost after `InitFromConfig()` | Its compile-time defaults (all pulls off, all outputs low) were applied | Define the `CONFIG_PCAL95555_*` macros ([Configuration](configuration.md)) |
 
 ## Interrupts do not arrive

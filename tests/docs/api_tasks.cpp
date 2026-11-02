@@ -44,7 +44,11 @@ bool drive_outputs(Gpio& gpio) {
 
 // --8<-- [start:read]
 void read_inputs(Gpio& gpio) {
-  const bool button = gpio.ReadPin(8);         // false on a bus error too
+  bool button = false;
+  if (!gpio.ReadPin(8, button)) {              // false: the read failed, button untouched
+    std::printf("pin 8: read failed\n");
+  }
+  const bool led = gpio.ReadPin(0);            // shorthand: false on a bus error too
   const uint16_t all = gpio.ReadAllInputs();   // bit N = pin N
   const auto some = gpio.ReadPins({8, 9, 10});
   for (const auto& [pin, level] : some) {
@@ -54,6 +58,7 @@ void read_inputs(Gpio& gpio) {
     std::printf("read failed\n");
   }
   (void)button;
+  (void)led;
   (void)all;
 }
 // --8<-- [end:read]

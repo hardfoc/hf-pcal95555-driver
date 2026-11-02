@@ -117,6 +117,27 @@ TEST_CASE("reads return the input level after polarity inversion") {
   CHECK(!drv.ReadPin(0));
 }
 
+TEST_CASE("ReadPin(pin, level) tells a low pin from a failed read") {
+  MockPcal95555 bus(true);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.setPins(0x0000);
+  bool level = true;
+  CHECK(drv.ReadPin(3, level)); // low pin: the read worked
+  CHECK(!level);
+  bus.setPins(0x0008);
+  bus.nackNextReads(2); // both attempts of the default single retry fail
+  level = false;
+  CHECK(!drv.ReadPin(3, level)); // failed read: reported, level untouched
+  CHECK(!level);
+  CHECK(drv.HasError(Error::I2CReadFail));
+  CHECK(drv.ReadPin(3, level));
+  CHECK(level);
+  bool bad = false;
+  CHECK(!drv.ReadPin(16, bad));
+  CHECK(drv.HasError(Error::InvalidPin));
+}
+
 TEST_CASE("invalid pins set InvalidPin and send nothing") {
   MockPcal95555 bus(true);
   Driver drv(&bus, uint8_t{0x20});
