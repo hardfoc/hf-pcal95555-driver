@@ -305,7 +305,7 @@ The 3-step detection could not confirm chip type. Check:
 ## Additional Resources
 
 - [Main README](../../README.md) -- Full project documentation
-- [PCAL9555A Datasheet](../../docs/datasheet/PCAL9555A.pdf)
-- [Driver API Reference](../../docs/api_reference.md)
-- [Platform Integration Guide](../../docs/platform_integration.md)
+- [PCAL9555A datasheet](../../docs/datasheet/pcal9555a.pdf), [PCA9555 datasheet](../../docs/datasheet/pca9555.pdf)
+- [API guide](../../docs/api-guide.md)
+- [Porting](../../docs/porting.md)
 - [Build Scripts README](scripts/README.md)
