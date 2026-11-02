@@ -1,1 +1,0 @@
-Sitemap: https://hardfoc.github.io/hf-pcal95555-driver/development/sitemap.xml
