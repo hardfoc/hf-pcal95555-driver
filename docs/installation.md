@@ -1,63 +1,71 @@
 # Installation
 
-This guide covers how to integrate the PCAL95555 driver into your project.
+Add the driver to a CMake or ESP-IDF project. It is a header-only C++20 library with no dependencies.
 
-## Prerequisites
+## Requirements
 
-Before installing the driver, ensure you have:
+- A C++20 compiler: GCC 10+, Clang 12+ or a current MSVC.
+- No RTOS or exceptions. Every call except `RegisterPinInterrupt()` is `noexcept` and returns `bool`, a value or
+  sets an error flag. The driver keeps `std::function` callbacks, so registering a callback may allocate.
 
-- **C++17 Compiler**: GCC 7+, Clang 5+, or MSVC 2017+
-- **I2C Interface**: Your platform's I2C driver (ESP-IDF, STM32 HAL, Arduino Wire, etc.)
-- **Compatible chip**: PCA9555 or PCAL9555A (the driver auto-detects which variant is connected)
+## Get the source
 
-## Integration
-
-This driver is a **header-only template library** designed to be integrated directly into your project. There's no separate build step required.
-
-### Option 1: Copy Files
-
-Copy the following files into your project:
-
-```
-inc/
-  ├── pcal95555.hpp
-  └── pcal95555_kconfig.hpp
-src/
-  └── pcal95555.ipp
-```
-
-**Note**: The driver uses a header-only template design where `pcal95555.ipp` is included by `pcal95555.hpp`. Kconfig compile-time configuration macros live in `pcal95555_kconfig.hpp` (also included automatically). You typically only need to include the main header file in your project.
-
-### Option 2: Git Submodule
+A git submodule keeps the driver pinned to a version you chose:
 
 ```bash
-cd your-project
-git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git drivers/pcal95555
+git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git external/hf-pcal95555-driver
+git submodule update --init external/hf-pcal95555-driver
 ```
 
-Then add to your include path:
+Only `inc/`, `src/`, `cmake/` and `CMakeLists.txt` are needed to build. The examples have their own submodule
+(`examples/esp32/scripts`); you do not need it to use the driver.
+
+## CMake
+
 ```cmake
-target_include_directories(your_target PRIVATE drivers/pcal95555/inc)
+add_subdirectory(external/hf-pcal95555-driver)
+target_link_libraries(my_app PRIVATE hf::pcal95555)
 ```
 
-## Including the Header
+`hf::pcal95555` is an alias of the `hf_pcal95555` INTERFACE target. It carries the include directories (`inc/` and
+the generated version header) and requires C++20 (`cxx_std_20`), so your target does not need to set either.
+`find_package(hf_pcal95555)` works after `cmake --install`.
 
-Simply include the header in your code:
+| Option | Default | Effect |
+| --- | --- | --- |
+| `HF_PCAL95555_ENABLE_WARNINGS` | `OFF` | `-Wall -Wextra -Wpedantic` on targets that link the driver |
+| `HF_PCAL95555_BUILD_TESTS` | `OFF` | Builds the host unit tests in `tests/` ([Testing and CI](testing.md)) |
+
+## ESP-IDF
+
+The ESP-IDF component wrapper is
+[`examples/esp32/components/hf_pcal95555/`](../examples/esp32/components/hf_pcal95555/CMakeLists.txt). Copy that
+folder into your project's `components/` (or point `EXTRA_COMPONENT_DIRS` at it) and set the `HF_PCAL95555_ROOT`
+cache variable to the driver checkout; the wrapper stops with a clear message when the path is wrong. Your
+component then declares `REQUIRES hf_pcal95555`. The wrapper requires the IDF `driver` component, which the ESP32
+reference port uses.
+
+## How the build is organised
+
+| Layer | File | Role |
+| --- | --- | --- |
+| Settings | [`cmake/hf_pcal95555_build_settings.cmake`](../cmake/hf_pcal95555_build_settings.cmake) | Target name, include directories, version: the single source of truth |
+| Library | [`CMakeLists.txt`](../CMakeLists.txt) | INTERFACE target, install and package export |
+| ESP-IDF | [`examples/esp32/components/hf_pcal95555/CMakeLists.txt`](../examples/esp32/components/hf_pcal95555/CMakeLists.txt) | IDF component wrapper over the same settings |
+
+The version is set once in the settings file and written into `pcal95555_version.h` at configure time. Read it at
+compile or run time:
 
 ```cpp
-#include "pcal95555.hpp"
+const char* v = pcal95555::PCAL95555<MyI2c>::GetDriverVersion();   // "1.0.0"
 ```
 
-The implementation is included automatically via the header file.
+## Compile-time configuration
 
-## Next Steps
+`inc/pcal95555_kconfig.hpp` gives every `CONFIG_PCAL95555_*` macro a default, so the driver builds without
+ESP-IDF. The values only matter to `InitFromConfig()`; [Configuration](configuration.md) lists them.
 
-- Follow the [Quick Start](quickstart.md) guide to create your first application
-- Review [Hardware Setup](hardware_setup.md) for wiring instructions
-- Check [Platform Integration](platform_integration.md) to implement the I2C interface
+## Next
 
----
-
-**Navigation**
-⬅️ [Back to Index](index.md) | [Next: Quick Start ➡️](quickstart.md)
-
+[Quickstart](quickstart.md) wires the chip and lights an LED; [Porting](porting.md) writes the I2C interface for
+your MCU.

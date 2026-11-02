@@ -1,53 +1,108 @@
-# HF-PCAL95555 Documentation
-
-Welcome! This directory contains step-by-step guides for installing, building, and using the **HF-PCAL95555** library -- a hardware-agnostic C++ driver for the **PCA9555** and **PCAL9555A** 16-bit I/O expanders.
-
-The driver auto-detects which chip variant is connected and enables features accordingly. Standard PCA9555 features work on both chips; PCAL9555A-only features (pull resistors, drive strength, input latch, interrupt mask/status, output mode) degrade gracefully on a PCA9555.
-
-## Documentation Structure
-
-### **Getting Started**
-
-1. **[🛠️ Installation](installation.md)** – How to integrate the driver into your project
-2. **[⚡ Quick Start](quickstart.md)** – Minimal working example to get you running
-3. **[🔌 Hardware Setup](hardware_setup.md)** – Wiring diagrams and pin connections
-
-### **Integration**
-
-4. **[🔧 Platform Integration](platform_integration.md)** – Implement the CRTP I2C interface for your platform
-5. **[⚙️ Configuration](configuration.md)** – Configuration options and Kconfig settings
-
-### **Reference**
-
-6. **[📖 API Reference](api_reference.md)** – Complete API documentation (43 methods)
-7. **[💡 Examples](examples.md)** – Detailed example walkthroughs (comprehensive test + LED animation)
-
-### **Troubleshooting**
-
-8. **[🐛 Troubleshooting](troubleshooting.md)** – Common issues and solutions
-
+---
+hide:
+  - navigation
+  - toc
 ---
 
-## Quick Start Path
+<div class="hf-hero" markdown>
+<span class="hf-kicker">HardFOC driver</span>
 
-**New to PCAL95555?** Follow this recommended path:
+# PCA9555 / PCAL9555A Driver
 
-1. Start with **[Installation](installation.md)** to integrate the driver
-2. Follow **[Hardware Setup](hardware_setup.md)** to wire your I/O expander
-3. Read **[Quick Start](quickstart.md)** for a minimal working example
-4. Check **[Platform Integration](platform_integration.md)** to implement the I2C interface
-5. Explore **[Examples](examples.md)** for more advanced usage
+<p>A C++20 driver for the NXP PCA9555 and PCAL9555A 16-bit I2C I/O expanders. It detects which chip is on the
+bus, drives and reads all sixteen pins, and uses the PCAL9555A's Agile I/O features (pull resistors, drive
+strength, input latch, interrupt mask and status, open-drain outputs) when they are there.</p>
 
----
+[Quickstart](quickstart.md){ .md-button .md-button--primary }
+[API guide](api-guide.md){ .md-button }
+[Source on GitHub](https://github.com/hardfoc/hf-pcal95555-driver){ .md-button }
+</div>
 
-## Need Help?
+The driver has no platform code. You give it a small class that writes and reads one register over I2C; it does
+the rest: variant detection, read-modify-write of the port registers, retries, interrupt decoding and error flags.
 
-- **🐛 Found a bug?** Check the [Troubleshooting](troubleshooting.md) guide
-- **❓ Have questions?** Review the [API Reference](api_reference.md)
-- **📝 Want to contribute?** See the contributing guidelines in the main README
+<div class="hf-chip" markdown>
+<div class="hf-chip__head">
+<span class="hf-chip__kicker">16-bit I2C GPIO expander</span>
+<span class="hf-chip__name">PCA9555 / PCAL9555A</span>
+<span class="hf-chip__vendor">NXP Semiconductors</span>
+</div>
 
----
+I/O
+:   16 pins in two 8-bit ports, 5 V tolerant, 25 mA sink per pin (recommended maximum)
 
-**Navigation**
-➡️ [Installation](installation.md)
+Host interface
+:   I2C / SMBus, 0 to 400 kHz, address 0x20 to 0x27 (A2, A1, A0)
 
+Supply
+:   PCAL9555A 1.65 V to 5.5 V; PCA9555 2.3 V to 5.5 V
+
+Interrupt
+:   INT, open drain, active low; on the PCAL9555A maskable per pin, with a source register
+
+Agile I/O (PCAL9555A)
+:   Pull-up / pull-down (100 kΩ typ.), four drive levels, input latch, push-pull or open drain per port
+
+Package
+:   PCAL9555A: TSSOP24, HWQFN24; PCA9555 also SO24, SSOP24, HVQFN24. Pin-compatible in the same package
+
+[PCAL9555A datasheet](datasheet/pcal9555a.pdf) ·
+[PCA9555 datasheet](datasheet/pca9555.pdf)
+</div>
+
+## What you get
+
+- **One driver for both parts.** `PCAL95555<YourI2c>` probes the Agile I/O bank at start-up and reports
+  `ChipVariant::PCA9555` or `ChipVariant::PCAL9555A`. See [PCA9555 and PCAL9555A](variants.md).
+- **Pins by number.** Pins 0-7 are port 0, 8-15 are port 1; single-pin, mask and list forms for direction,
+  output, polarity and reads. See the [API guide](api-guide.md).
+- **Agile I/O guarded.** Pull, drive-strength, latch, interrupt-mask and output-mode calls return `false` with
+  `Error::UnsupportedFeature` on a PCA9555 instead of sending a write the chip would NACK.
+- **Per-pin edge callbacks.** Rising, falling or both, decoded from the PCAL9555A's interrupt status register or
+  from input snapshots on a PCA9555. See [Interrupts](interrupts.md).
+- **Zero-overhead portability.** The I2C interface is a CRTP base: no virtual calls, three required methods.
+  See [Porting](porting.md).
+- **Tested without hardware.** Host unit tests run the driver against a register model of both chips. See
+  [Testing and CI](testing.md).
+
+## Where to go next
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch-outline: **[Quickstart](quickstart.md)**
+
+    ---
+
+    Wire the chip, write the port, light an LED from a button in about 15 lines.
+
+-   :material-chip: **[Hardware](hardware.md)**
+
+    ---
+
+    Pins, addresses, bus timing, power and the differences between the parts.
+
+-   :material-layers-outline: **[Architecture](architecture.md)**
+
+    ---
+
+    The three layers and what each one owns.
+
+-   :material-code-braces: **[API guide](api-guide.md)**
+
+    ---
+
+    Configure, write, read, interrupts and errors, task by task.
+
+-   :material-swap-horizontal: **[Porting](porting.md)**
+
+    ---
+
+    Implement the I2C interface for your MCU.
+
+-   :material-book-open-variant: **[API reference](api-reference.md)**
+
+    ---
+
+    Every class and member, generated from the headers.
+
+</div>

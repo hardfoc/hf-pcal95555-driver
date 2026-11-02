@@ -1,183 +1,74 @@
-# Quick Start
+# Quickstart
 
-This guide will get you up and running with the PCAL95555 driver in just a few steps.
+Light an LED from a button through a PCA9555 or PCAL9555A: wire five signals, write a small I2C port class, call
+four driver functions.
 
-## Prerequisites
+## 1. Wire it
 
-- [Driver installed](installation.md)
-- [Hardware wired](hardware_setup.md)
-- [I2C interface implemented](platform_integration.md)
+| MCU | PCA9555 / PCAL9555A | Notes |
+| --- | --- | --- |
+| I2C SCL | SCL | Pull-up to the bus voltage (4.7 kΩ is a common value at 400 kHz) |
+| I2C SDA | SDA | Pull-up as for SCL |
+| GND | VSS | Common ground |
+| 3.3 V | VDD | 1.65 V to 5.5 V (PCAL9555A) or 2.3 V to 5.5 V (PCA9555); 100 nF next to the pin |
+| GND | A0, A1, A2 | Address 0x20; tie each pin to VDD or VSS, never leave it open |
+| GPIO in (optional) | INT | Open drain, active low: pull it up |
 
-## Minimal Example
+For the example, connect an LED with a series resistor from P0_0 (pin 0) to VDD, so the expander sinks its current,
+and a push button from P1_0 (pin 8) to ground. The [Hardware](hardware.md) page has the pin numbers per package,
+the address table and the electrical limits.
 
-Here's a complete working example:
+## 2. Add the driver
 
-```cpp
-#include "pcal95555.hpp"
+Add the repository as a submodule and link the `hf_pcal95555` CMake target (or add `inc/` to your include path and
+build with C++20). [Installation](installation.md) covers CMake and ESP-IDF.
 
-// 1. Implement the I2C interface
-class MyI2c : public pcal95555::I2cInterface<MyI2c> {
-public:
-    bool Write(uint8_t addr, uint8_t reg, const uint8_t *data, size_t len) {
-        // Your I2C write implementation
-        return true;
-    }
-    
-    bool Read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len) {
-        // Your I2C read implementation
-        return true;
-    }
-};
-
-// 2. Create instances
-MyI2c i2c;
-// Option 1: Using address directly (recommended)
-pcal95555::PCAL95555<MyI2c> gpio(&i2c, 0x20); // Address 0x20 (default)
-
-// Option 2: Using pin levels
-// pcal95555::PCAL95555<MyI2c> gpio(&i2c, false, false, false); // A0=LOW, A1=LOW, A2=LOW -> 0x20
-
-// Option 3: Force chip variant (skip auto-detection)
-// pcal95555::PCAL95555<MyI2c> gpio(&i2c, 0x20, pcal95555::ChipVariant::PCA9555);
-
-// 3. Initialize (lazy initialization - happens automatically on first use)
-// You can also explicitly initialize:
-if (!gpio.EnsureInitialized()) {
-    // Handle initialization failure
-    return;
-}
-
-// Reset to default state
-gpio.ResetToDefault(); // all pins become inputs with pull-ups
-
-// 4. Check chip variant (auto-detected during init)
-if (gpio.HasAgileIO()) {
-    // PCAL9555A detected -- pull resistors, drive strength, etc. available
-} else {
-    // PCA9555 detected -- standard GPIO only
-}
-
-// 5. Configure and use
-gpio.SetPinDirection(0, pcal95555::PCAL95555<MyI2c>::GPIODir::Output);
-gpio.WritePin(0, true);
-bool input = gpio.ReadPin(1);
+```bash
+git submodule add https://github.com/hardfoc/hf-pcal95555-driver.git external/hf-pcal95555-driver
 ```
 
-## Step-by-Step Explanation
+## 3. Write the port
 
-### Step 1: Include the Header
+The port is the only platform code. It brings the bus up, writes one register and reads one register. Replace the
+`platform_*` calls with your SDK's.
 
-```cpp
-#include "pcal95555.hpp"
+```cpp title="my_i2c.hpp"
+--8<-- "tests/docs/my_i2c.hpp:port"
 ```
 
-### Step 2: Implement the I2C Interface
+[Porting](porting.md) explains each method, the optional ones and the ESP-IDF reference port.
 
-You need to implement the `I2cInterface` for your platform. See [Platform Integration](platform_integration.md) for detailed examples for ESP32, STM32, and Arduino.
+## 4. Light the LED
 
-The interface requires two methods:
-- `Write(uint8_t addr, uint8_t reg, const uint8_t *data, size_t len)` - Write data to a register
-- `Read(uint8_t addr, uint8_t reg, uint8_t *data, size_t len)` - Read data from a register
-
-### Step 3: Create Driver Instance
-
-You can create the driver instance in two ways:
-
-**Option 1: Using I2C address directly (recommended)**
-```cpp
-MyI2c i2c;
-pcal95555::PCAL95555<MyI2c> gpio(&i2c, 0x20); // Address 0x20 (default)
+```cpp title="main.cpp"
+--8<-- "tests/docs/quickstart.cpp:quickstart"
 ```
 
-**Option 2: Using address pin levels**
-```cpp
-MyI2c i2c;
-// Constructor takes A2, A1, A0 pin levels (all LOW = address 0x20, default)
-pcal95555::PCAL95555<MyI2c> gpio(&i2c, false, false, false);
-```
+What each step does:
 
-**Constructor Parameters:**
+1. `EnsureInitialized()` brings the bus up through your port, reads Input Port 0 to prove the chip answers at
+   0x20, and probes register 0x4F to tell a PCAL9555A from a PCA9555. Every other call runs it for you on first
+   use; calling it yourself gives you one place to handle a missing chip.
+2. `SetPinDirection()` writes one bit of the Configuration register: `GPIODir::Output` is 0, `GPIODir::Input` is 1.
+   All pins are inputs after power-up.
+3. `ReadPin()` reads the Input Port register. The button pulls the pin low, so pressed reads `false`; a PCAL9555A's
+   internal pull-up (on by default) or an external one holds it high otherwise.
+4. `WritePin()` reads the Output Port register, changes one bit and writes it back. Writing `true` drives the pin
+   high, which turns this LED off; `pressed` therefore lights it.
 
-**Using address (Option 1):**
-- Pointer to your I2C interface implementation
-- I2C address (0x20 to 0x27). Address bits are calculated automatically.
+This example is built by the host CI, so it compiles against the current headers.
 
-**Using pin levels (Option 2):**
-- Pointer to your I2C interface implementation
-- A0 pin level (true = HIGH/VDD, false = LOW/GND)
-- A1 pin level (true = HIGH/VDD, false = LOW/GND)
-- A2 pin level (true = HIGH/VDD, false = LOW/GND)
+## If it does not work
 
-The I2C address is calculated automatically: base address 0x20 + (A2<<2 | A1<<1 | A0). For example:
-- Address 0x20 → A0=LOW, A1=LOW, A2=LOW (default)
-- Address 0x21 → A0=HIGH, A1=LOW, A2=LOW
+| Symptom | First thing to check |
+| --- | --- |
+| `EnsureInitialized()` returns `false` | SDA / SCL swapped, missing pull-ups, A2-A0 levels against the address you gave |
+| `GetChipVariant()` says `PCA9555` on a PCAL9555A | Read the part marking; a bus that does not report NACKs correctly ([Troubleshooting](troubleshooting.md)) |
+| The pin reads high with the button pressed | Wrong pin number: pins 8-15 are P1_0 to P1_7 |
+| The button reads random values on a PCA9555 | The PCA9555 pull-up is weak (about 100 kΩ); add an external one if the line is long |
 
-### Step 4: Initialize
+## Next
 
-The driver uses **lazy initialization** - it initializes automatically on first use. However, you can explicitly initialize:
-
-```cpp
-// Explicit initialization (optional)
-if (!gpio.EnsureInitialized()) {
-    // Handle initialization failure
-    return;
-}
-
-// Reset to default state
-gpio.ResetToDefault();
-```
-
-**Lazy Initialization:**
-- The driver initializes automatically when you call any method that requires I2C communication
-- Initialization includes setting address pins, verifying I2C communication, **auto-detecting the chip variant** (PCA9555 vs PCAL9555A), and initializing internal state
-- If initialization fails, methods return `false` or appropriate error values
-- You can call `EnsureInitialized()` explicitly to verify initialization before use
-
-**Chip Variant Detection:**
-- The driver automatically probes the Agile I/O register bank to determine if the chip is a PCA9555 or PCAL9555A
-- Use `HasAgileIO()` to check if PCAL9555A features are available
-- Use `GetChipVariant()` to get the specific variant enum
-- PCAL9555A-only methods return `false` and set `Error::UnsupportedFeature` on a PCA9555
-
-`ResetToDefault()` puts the device in a known state (all pins as inputs with pull-ups enabled on PCAL9555A).
-
-### Step 5: Configure and Use Pins
-
-```cpp
-// Set pin 0 as output
-gpio.SetPinDirection(0, pcal95555::PCAL95555<MyI2c>::GPIODir::Output);
-
-// Write to pin 0
-gpio.WritePin(0, true);
-
-// Read from pin 1 (input)
-bool value = gpio.ReadPin(1);
-```
-
-## Expected Output
-
-When running this example:
-- Pin 0 should be set high (if connected to an LED, it should light up)
-- Pin 1 value should be read correctly
-- No error messages should appear
-
-## Troubleshooting
-
-If you encounter issues:
-
-- **Compilation errors**: Check that you've implemented all required I2C interface methods
-- **Initialization fails**: Verify hardware connections and I2C address
-- **No response**: Check I2C bus and pull-up resistors
-- **See**: [Troubleshooting](troubleshooting.md) for common issues
-
-## Next Steps
-
-- Explore [Examples](examples.md) for more advanced usage
-- Review the [API Reference](api_reference.md) for all available methods
-- Check [Configuration](configuration.md) for customization options
-
----
-
-**Navigation**
-⬅️ [Installation](installation.md) | [Next: Hardware Setup ➡️](hardware_setup.md) | [Back to Index](index.md)
-
+- [API guide](api-guide.md): pull resistors, drive strength, interrupts, errors.
+- [Examples](examples.md): the ESP32-S3 test suite and LED animation demo.
+- [PCA9555 and PCAL9555A](variants.md): what each part has and how the driver tells them apart.

@@ -7,10 +7,10 @@
 // --8<-- [start:quickstart]
 #include "pcal95555.hpp"
 
-int blink_led_follow_button(MyI2c& bus) {
+int led_follows_button(MyI2c& bus) {
   pcal95555::PCAL95555<MyI2c> gpio(&bus, false, false, false);  // A2 A1 A0 low: 0x20
 
-  if (!gpio.EnsureInitialized()) {                    // 1. probe the chip, detect the variant
+  if (!gpio.EnsureInitialized()) {                    // 1. probe, detect the variant
     return -1;                                        // wiring, pull-ups or address
   }
 
