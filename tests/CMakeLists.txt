@@ -12,7 +12,12 @@
 add_executable(hf_pcal95555_host_tests
   test_main.cpp
   test_driver.cpp
+  test_kconfig.cpp
 )
+
+# Only test_kconfig.cpp sees the stand-in sdkconfig.h.
+set_source_files_properties(test_kconfig.cpp PROPERTIES
+  INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/kconfig)
 
 target_link_libraries(hf_pcal95555_host_tests PRIVATE ${HF_PCAL95555_TARGET_NAME})
 target_include_directories(hf_pcal95555_host_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
