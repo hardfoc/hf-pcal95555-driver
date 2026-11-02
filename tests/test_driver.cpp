@@ -67,6 +67,31 @@ TEST_CASE("a missing device fails initialisation with I2CReadFail") {
   CHECK(drv.HasError(Error::I2CReadFail));
 }
 
+TEST_CASE("an inconclusive variant probe fails initialisation and is retried") {
+  // PCAL9555A Rev. 2 table 4: command bytes 40h-4Fh exist only on the PCAL9555A, so the probe of 4Fh
+  // NACKs on a PCA9555. If the bus then fails the next read too, the parts cannot be told apart.
+  MockPcal95555 bus(false);
+  bus.nackReadsAfterProbe(1);
+  Driver drv(&bus, uint8_t{0x20});
+  CHECK(!drv.EnsureInitialized());
+  CHECK(drv.HasError(Error::I2CReadFail));
+  CHECK(drv.GetChipVariant() == ChipVariant::Unknown);
+  bus.nackReadsAfterProbe(0);
+  REQUIRE(drv.EnsureInitialized()); // the next call probes again
+  CHECK(drv.GetChipVariant() == ChipVariant::PCA9555);
+  CHECK(!drv.HasError(Error::I2CReadFail));
+}
+
+TEST_CASE("ChangeAddress fails when the variant probe at the new address is inconclusive") {
+  MockPcal95555 bus(false);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.setAddress(0x21);
+  bus.nackReadsAfterProbe(1);
+  CHECK(!drv.ChangeAddress(uint8_t{0x21}));
+  CHECK(drv.GetChipVariant() == ChipVariant::Unknown);
+}
+
 TEST_CASE("direction, output and polarity bits land in the right port register") {
   MockPcal95555 bus(true);
   Driver drv(&bus, uint8_t{0x20});

@@ -1028,7 +1028,10 @@ public:
    * internal state.
    *
    * @return true if initialization succeeded or was already initialized;
-   *         false if initialization failed.
+   *         false if initialization failed: the device did not answer, or
+   *         auto-detection could not tell a PCA9555 from a PCAL9555A (the bus
+   *         did not answer the read after the probe). Both set
+   *         Error::I2CReadFail; the next call tries again.
    *
    * @note This method is automatically called by methods that require initialization.
    *       You can also call it explicitly to verify initialization before use.
@@ -1200,8 +1203,11 @@ private:
    * If step 2 succeeds the chip is PCAL9555A.
    * If step 2 NACKs but step 3 succeeds the chip is a standard PCA9555.
    * If step 3 also fails the detection is inconclusive (bus error).
+   *
+   * @return true when a variant was identified; false when it is left Unknown
+   *         (initialisation and ChangeAddress() then fail).
    */
-  void detectChipVariant() noexcept;
+  bool detectChipVariant() noexcept;
 };
 
 // Include template implementation

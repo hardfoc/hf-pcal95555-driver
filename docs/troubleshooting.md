@@ -19,7 +19,7 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `GetChipVariant()` is `Unknown` | The read after the probe failed: the bus did not recover from the NACK | Fix bus recovery in the port, or pass the variant ([PCA9555 and PCAL9555A](variants.md)) |
+| `EnsureInitialized()` fails although the chip answers | The read after the detection probe failed: the bus did not recover from the NACK | Fix bus recovery in the port, or pass the variant ([PCA9555 and PCAL9555A](variants.md)) |
 | A PCA9555 is reported as `PCAL9555A` | The port returns `true` for a NACK | Return `false` on every NACK ([Porting](porting.md)) |
 | Agile I/O calls fail with `UnsupportedFeature` | The part is a PCA9555, or detection failed | Read the marking (PCAL9555A vs PCA9555); check `GetChipVariant()` |
 

@@ -126,8 +126,14 @@ bool pcal95555::PCAL95555<I2cType>::initialize() noexcept {
     // User specified variant - skip auto-detection
     chip_variant_ = user_variant_;
   } else {
-    // Auto-detect by probing an Agile I/O register
-    detectChipVariant();
+    // Auto-detect by probing an Agile I/O register. An inconclusive probe (the bus did not answer
+    // the read after it) leaves the variant unknown: fail so the next call retries instead of
+    // running with no feature set.
+    if (!detectChipVariant()) {
+      setError(Error::I2CReadFail);
+      initialized_ = false;
+      return false;
+    }
   }
   
   // Initialize previous pin states for edge detection
@@ -1209,10 +1215,11 @@ bool pcal95555::PCAL95555<I2cType>::requireAgileIO() noexcept {
 // Detect chip variant by probing OUTPUT_CONF register (0x4F)
 // Uses a 3-step sandwich: standard read -> probe -> standard read
 template <typename I2cType>
-void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
+bool pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
   // Use single-shot (no retries) for the probe to avoid spamming the bus
   int saved_retries = retries_;
   retries_ = 0;
+  chip_variant_ = ChipVariant::Unknown;
 
   uint8_t dummy = 0;
 
@@ -1220,7 +1227,7 @@ void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
   if (!readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), dummy)) {
     // Bus is not working at all - leave variant as Unknown
     retries_ = saved_retries;
-    return;
+    return false;
   }
   clearError(Error::I2CReadFail);
 
@@ -1255,6 +1262,7 @@ void pcal95555::PCAL95555<I2cType>::detectChipVariant() noexcept {
 
   // Restore retries
   retries_ = saved_retries;
+  return chip_variant_ != ChipVariant::Unknown;
 }
 
 // Get current I2C address
@@ -1304,10 +1312,12 @@ bool pcal95555::PCAL95555<I2cType>::changeAddressImpl(uint8_t new_bits) noexcept
   clearError(Error::InvalidAddress);
 
   // Re-detect chip variant at new address
+  chip_variant_ = ChipVariant::Unknown;
   if (user_variant_ != ChipVariant::Unknown) {
     chip_variant_ = user_variant_;
-  } else {
-    detectChipVariant();
+  } else if (!detectChipVariant()) {
+    setError(Error::I2CReadFail);
+    return false;
   }
 
   initialized_ = true;

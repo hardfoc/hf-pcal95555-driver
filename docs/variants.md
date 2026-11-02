@@ -51,7 +51,7 @@ The names are the `Pcal95555Reg` enumerators. The drive-strength registers hold 
 
 ```mermaid
 flowchart TD
-    A[Read INPUT_PORT_0] -->|NACK| U[Unknown: bus or address problem]
+    A[Read INPUT_PORT_0] -->|NACK| U[EnsureInitialized fails: bus or address problem]
     A -->|ACK| B[Read OUTPUT_CONF 0x4F, no retries]
     B -->|ACK| P[PCAL9555A]
     B -->|NACK| C[Read INPUT_PORT_0 again]
@@ -68,10 +68,10 @@ constructor and the probe is skipped:
 --8<-- "tests/docs/configuration.cpp:variant"
 ```
 
-!!! note "Unknown after initialisation"
-    When the second read of Input Port 0 also fails, detection leaves `ChipVariant::Unknown`, `EnsureInitialized()`
-    still returns `true` and every Agile I/O call fails with `UnsupportedFeature`. Check `GetChipVariant()` after
-    bring-up, and fix the bus ([Troubleshooting](troubleshooting.md)) or pass the variant explicitly.
+!!! note "Inconclusive detection"
+    When the second read of Input Port 0 also fails, the driver cannot tell the parts apart: `EnsureInitialized()`
+    (and `ChangeAddress()`) return `false` with `I2CReadFail` set and the variant stays `Unknown`. The next call
+    probes again. Fix the bus ([Troubleshooting](troubleshooting.md)) or pass the variant explicitly.
 
 ## Porting PCA9555 code to a PCAL9555A
 

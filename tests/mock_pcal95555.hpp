@@ -68,7 +68,18 @@ public:
   }
 
   bool Read(uint8_t addr, uint8_t reg, uint8_t* data, size_t len) noexcept {
+    if (read_hook_) {
+      read_hook_(reg);
+    }
+    if (nack_reads_ > 0) {
+      --nack_reads_;
+      log_.push_back({false, addr, reg, 0});
+      return false;
+    }
     if (!accepts(addr, reg)) {
+      if (agile_io_ == false && reg >= 0x40) {
+        nack_reads_ = nack_after_probe_;
+      }
       log_.push_back({false, addr, reg, 0});
       return false;
     }
@@ -117,6 +128,15 @@ public:
   void setAddress(uint8_t a) noexcept {
     address_ = a;
   }
+  /// Model a bus that does not recover after a NACK of the Agile I/O probe: the next @p n reads
+  /// fail as well.
+  void nackReadsAfterProbe(int n) noexcept {
+    nack_after_probe_ = n;
+  }
+  /// Called at the start of every Read() with the register; lets a test run code mid-transfer.
+  void setReadHook(std::function<void(uint8_t)> hook) {
+    read_hook_ = std::move(hook);
+  }
 
 private:
   [[nodiscard]] bool accepts(uint8_t addr, uint8_t reg) const noexcept {
@@ -154,6 +174,9 @@ private:
   uint16_t pins_{0};
   uint16_t pending_irq_{0};
   std::function<void()> handler_;
+  std::function<void(uint8_t)> read_hook_;
+  int nack_after_probe_{0};
+  int nack_reads_{0};
   std::vector<Transfer> log_;
 };
 
