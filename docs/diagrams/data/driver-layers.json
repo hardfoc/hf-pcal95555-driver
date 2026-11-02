@@ -1,0 +1,44 @@
+{
+  "standard": [
+    "INPUT_PORT_0",
+    "INPUT_PORT_1",
+    "OUTPUT_PORT_0",
+    "OUTPUT_PORT_1",
+    "POLARITY_INV_0",
+    "POLARITY_INV_1",
+    "CONFIG_PORT_0",
+    "CONFIG_PORT_1"
+  ],
+  "agile": [
+    "DRIVE_STRENGTH_0",
+    "DRIVE_STRENGTH_1",
+    "DRIVE_STRENGTH_2",
+    "DRIVE_STRENGTH_3",
+    "INPUT_LATCH_0",
+    "INPUT_LATCH_1",
+    "PULL_ENABLE_0",
+    "PULL_ENABLE_1",
+    "PULL_SELECT_0",
+    "PULL_SELECT_1",
+    "INT_MASK_0",
+    "INT_MASK_1",
+    "INT_STATUS_0",
+    "INT_STATUS_1",
+    "OUTPUT_CONF"
+  ],
+  "required": [
+    "Write",
+    "Read",
+    "EnsureInitialized"
+  ],
+  "optional": [
+    "SetAddressPins",
+    "RegisterInterruptHandler",
+    "GpioSet",
+    "GpioRead"
+  ],
+  "sources": [
+    "inc/pcal95555.hpp:Pcal95555Reg",
+    "inc/pcal95555_i2c_interface.hpp:I2cInterface"
+  ]
+}

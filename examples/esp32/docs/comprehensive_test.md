@@ -168,7 +168,8 @@ Skipping: Pull resistor config requires PCAL9555A (detected PCA9555)
 **Tests**: `GetInterruptStatus()` -- reading and clearing interrupt status.
 
 #### `test_pin_interrupt_callbacks()`
-**Tests**: `RegisterPinInterrupt()`, `SetInterruptCallback()` -- per-pin callbacks with edge detection (Rising, Falling, Both).
+**Tests**: `RegisterPinInterrupt()`, `SetInterruptCallback()` -- per-pin callbacks with edge detection
+(Rising, Falling, Both).
 
 #### `test_interrupt_handler_registration()`
 **Tests**: `RegisterInterruptHandler()` -- hardware INT pin setup. Passes even without INT pin connected.

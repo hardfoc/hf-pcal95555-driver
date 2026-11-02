@@ -71,6 +71,15 @@ if(HF_PCAL95555_ENABLE_WARNINGS)
 endif()
 
 #===============================================================================
+# Host unit tests (register model of the chip; no hardware)
+#===============================================================================
+option(HF_PCAL95555_BUILD_TESTS "Build the host unit tests in tests/" OFF)
+if(HF_PCAL95555_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+#===============================================================================
 # Install and export support (for find_package usage)
 #===============================================================================
 include(GNUInstallDirs)
