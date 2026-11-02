@@ -1,5 +1,5 @@
-warning: ignoring unsupported tag 'PAGE_OUTLINE_PANEL' at line 1763, file /tmp/doxyfile.isEpl6
-warning: Tag 'DOT_TRANSPARENT' at line 2786 of file '/tmp/doxyfile.isEpl6' has become obsolete.
+warning: ignoring unsupported tag 'PAGE_OUTLINE_PANEL' at line 1763, file /tmp/doxyfile.C475nS
+warning: Tag 'DOT_TRANSPARENT' at line 2786 of file '/tmp/doxyfile.C475nS' has become obsolete.
          To avoid this warning please remove this line from your configuration file or upgrade it using "doxygen -u"
 /home/runner/work/hf-pcal95555-driver/hf-pcal95555-driver/inc/pcal95555.hpp:301: warning: Example /home/runner/work/hf-pcal95555-driver/hf-pcal95555-driver/inc/pcal95555.hpp was already documented. Ignoring documentation found here.
 /home/runner/work/hf-pcal95555-driver/hf-pcal95555-driver/inc/pcal95555.hpp:322: warning: Example /home/runner/work/hf-pcal95555-driver/hf-pcal95555-driver/inc/pcal95555.hpp was already documented. Ignoring documentation found here.
