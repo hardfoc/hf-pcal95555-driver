@@ -39,3 +39,12 @@ target_include_directories(hf_pcal95555_doc_snippets PRIVATE ${CMAKE_CURRENT_SOU
 target_compile_features(hf_pcal95555_doc_snippets PRIVATE cxx_std_20)
 target_compile_options(hf_pcal95555_doc_snippets PRIVATE -Wall -Wextra)
 target_compile_definitions(hf_pcal95555_doc_snippets PRIVATE HF_PCAL95555_NO_GLOBAL_ALIASES)
+
+# Install rules: install into a scratch prefix and build a find_package() consumer against it.
+add_test(NAME hf_pcal95555_install
+  COMMAND ${CMAKE_COMMAND}
+    -DBUILD_DIR=${CMAKE_BINARY_DIR}
+    -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+    -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/install-test
+    -DCXX=${CMAKE_CXX_COMPILER}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/install/run_install_test.cmake)

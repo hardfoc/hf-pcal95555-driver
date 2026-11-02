@@ -1235,8 +1235,19 @@ private:
 
 // Include template implementation
 #define PCAL95555_HEADER_INCLUDED
+// Source tree: inc/../src/pcal95555.ipp. Installed tree: the .ipp sits next to this header.
+#if defined(__has_include)
+#if __has_include("../src/pcal95555.ipp")
 // NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
 #include "../src/pcal95555.ipp"
+#else
+// NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
+#include "pcal95555.ipp"
+#endif
+#else
+// NOLINTNEXTLINE(bugprone-suspicious-include) - Intentional: template implementation file
+#include "../src/pcal95555.ipp"
+#endif
 #undef PCAL95555_HEADER_INCLUDED
 
 

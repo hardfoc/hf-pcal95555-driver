@@ -6,11 +6,10 @@
 #ifndef PCAL95555_IMPL
 #define PCAL95555_IMPL
 
-// When included from header, use relative path; when compiled directly, use standard include
-#ifdef PCAL95555_HEADER_INCLUDED
-#include "../inc/pcal95555.hpp"
-#else
-#include "../inc/pcal95555.hpp"
+// Normally included by pcal95555.hpp (inside namespace pcal95555). Opened on its own (an IDE or a
+// linter), pull in the header first; the installed tree has no ../inc, so use the include path.
+#ifndef PCAL95555_HEADER_INCLUDED
+#include "pcal95555.hpp"
 #endif
 
 // Constructor: store I2C bus and pin levels (lazy initialization)
