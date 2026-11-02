@@ -245,7 +245,7 @@ void pcal95555::PCAL95555<I2cType>::InitFromConfig() noexcept {
 }
 
 // Set or clear a bit in a register byte
-static uint8_t updateBit(uint8_t regVal, uint8_t bit, bool set) noexcept {
+static inline uint8_t updateBit(uint8_t regVal, uint8_t bit, bool set) noexcept {
   if (set) {
     return regVal | (1 << bit);
   }

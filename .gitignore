@@ -139,3 +139,4 @@ Thumbs.db
 # so no source-tree gitignore entry is needed.  This comment is kept
 # as a breadcrumb — see cmake/hf_pcal95555_build_settings.cmake.
 site/
+build-host/
