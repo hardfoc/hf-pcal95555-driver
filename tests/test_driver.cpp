@@ -138,6 +138,21 @@ TEST_CASE("ReadPin(pin, level) tells a low pin from a failed read") {
   CHECK(drv.HasError(Error::InvalidPin));
 }
 
+TEST_CASE("an empty mask sets InvalidMask and sends nothing") {
+  MockPcal95555 bus(true);
+  Driver drv(&bus, uint8_t{0x20});
+  REQUIRE(drv.EnsureInitialized());
+  bus.clearLog();
+  CHECK(!drv.SetMultipleDirections(0, GPIODir::Output));
+  CHECK(!drv.SetMultipleOutputs(0, true));
+  CHECK(!drv.SetMultiplePolarities(0, Polarity::Inverted));
+  CHECK(!drv.EnableMultipleInputLatches(0, true));
+  CHECK(drv.HasError(Error::InvalidMask));
+  CHECK_EQ(bus.log().size(), 0U);
+  CHECK(drv.SetMultipleOutputs(0x0001, true)); // a valid mask clears the flag
+  CHECK(!drv.HasError(Error::InvalidMask));
+}
+
 TEST_CASE("invalid pins set InvalidPin and send nothing") {
   MockPcal95555 bus(true);
   Driver drv(&bus, uint8_t{0x20});

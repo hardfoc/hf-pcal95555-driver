@@ -344,6 +344,10 @@ bool pcal95555::PCAL95555<I2cType>::SetMultipleDirections(uint16_t mask, GPIODir
   if (!EnsureInitialized()) {
     return false;
   }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
+    return false;
+  }
   clearError(Error::InvalidMask);
   return modifyDualPortByMask(static_cast<uint8_t>(Pcal95555Reg::CONFIG_PORT_0),
                                static_cast<uint8_t>(Pcal95555Reg::CONFIG_PORT_1),
@@ -428,6 +432,10 @@ bool pcal95555::PCAL95555<I2cType>::WritePin(uint8_t pin, bool value) noexcept {
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::SetMultipleOutputs(uint16_t mask, bool value) noexcept {
   if (!EnsureInitialized()) {
+    return false;
+  }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
     return false;
   }
   clearError(Error::InvalidMask);
@@ -1073,6 +1081,11 @@ bool pcal95555::PCAL95555<I2cType>::SetMultiplePolarities(uint16_t mask, Polarit
   if (!EnsureInitialized()) {
     return false;
   }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
+    return false;
+  }
+  clearError(Error::InvalidMask);
   return modifyDualPortByMask(static_cast<uint8_t>(Pcal95555Reg::POLARITY_INV_0),
                                static_cast<uint8_t>(Pcal95555Reg::POLARITY_INV_1),
                                mask, (polarity == Polarity::Inverted));
@@ -1125,6 +1138,10 @@ bool pcal95555::PCAL95555<I2cType>::EnableInputLatch(uint8_t pin, bool enable) n
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::EnableMultipleInputLatches(uint16_t mask, bool enable) noexcept {
   if (!EnsureInitialized() || !requireAgileIO()) {
+    return false;
+  }
+  if (mask == 0U) {
+    setError(Error::InvalidMask);
     return false;
   }
   clearError(Error::InvalidMask);

@@ -101,7 +101,7 @@ enum class InterruptState : uint8_t {
 enum class Error : uint16_t {
   None = 0,
   InvalidPin = 1 << 0,          ///< Provided pin index out of range
-  InvalidMask = 1 << 1,         ///< Mask contained bits outside 0-15
+  InvalidMask = 1 << 1,         ///< A mask-form call got a mask that selects no pin (0)
   I2CReadFail = 1 << 2,         ///< An I2C read operation failed
   I2CWriteFail = 1 << 3,        ///< An I2C write operation failed
   UnsupportedFeature = 1 << 4,  ///< Feature requires PCAL9555A but chip is PCA9555
@@ -430,7 +430,8 @@ public:
    *
    * @param mask Bitmask where each set bit indicates a pin to configure.
    * @param dir Common direction for all selected pins.
-   * @return true on success; false if any I2C operation fails.
+   * @return true on success; false if any I2C operation fails; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin directions,
    *       prefer SetDirections() which works with pin numbers directly.
@@ -498,7 +499,8 @@ public:
    *
    * @param mask  Bitmask where each set bit indicates a pin to modify.
    * @param value Common output level for all selected pins (true=HIGH, false=LOW).
-   * @return true on success; false if any I2C operation fails.
+   * @return true on success; false if any I2C operation fails; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @example
    *   // Set pins 0, 2, 4 HIGH in one call
@@ -780,7 +782,8 @@ public:
    *
    * @param mask Bitmask selecting pins to configure.
    * @param polarity Normal or Inverted for all selected pins.
-   * @return true on success; false on any I2C failure.
+   * @return true on success; false on any I2C failure; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin polarities,
    *       prefer SetPolarities() which works with pin numbers directly.
@@ -818,7 +821,8 @@ public:
    *
    * @param mask Bitmask selecting pins.
    * @param enable true to enable; false to disable.
-   * @return true on success; false on any I2C failure.
+   * @return true on success; false on any I2C failure; false with
+   *         Error::InvalidMask (and no bus traffic) when @p mask is 0.
    *
    * @note This is a low-level method. For easier use with individual pin settings,
    *       prefer EnableInputLatches() which works with pin numbers directly.

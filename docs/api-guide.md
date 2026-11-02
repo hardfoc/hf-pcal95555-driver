@@ -135,7 +135,7 @@ from 0x40 up NACKs and sets the I2C error flag.
 | `Error::InvalidPin` | A pin above 15 | The next call with a valid pin |
 | `Error::UnsupportedFeature` | An Agile I/O call on a PCA9555 (or an undetected variant) | `ClearError()` / `ClearErrorFlags()` |
 | `Error::InvalidAddress` | `ChangeAddress(address)` outside 0x20 to 0x27 | A successful `ChangeAddress()` |
-| `Error::InvalidMask` | Declared; no call sets it at present | |
+| `Error::InvalidMask` | A mask-form call (`SetMultipleDirections()`, `SetMultipleOutputs()`, `SetMultiplePolarities()`, `EnableMultipleInputLatches()`) got a mask of 0; nothing is sent | The next of those calls with a non-zero mask |
 
 `GetErrorFlags()` returns the flags as a `uint16_t`; `HasError()` tests one, `ClearErrorFlags(mask)` clears the
 bits in `mask` (all by default).
