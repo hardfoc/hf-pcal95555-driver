@@ -26,10 +26,10 @@ ctest --test-dir build-host --output-on-failure
 
 ## Documentation snippets
 
-Every C++ block on this site is included from [`tests/docs/`](../tests/docs/my_i2c.hpp), which the host build
-compiles (target `hf_pcal95555_doc_snippets`, `-Wall -Wextra`, with `HF_PCAL95555_NO_GLOBAL_ALIASES` so the pages use the namespaced names) with the driver instantiated over the documented
-port. A change to the API that breaks a page breaks the build first. The README's example is a copy of the
-Quickstart snippet that `hardfoc-docs check` keeps in step.
+Every C++ block on this site is included from [`tests/docs/`](../tests/docs/my_i2c.hpp), which the host build compiles
+(target `hf_pcal95555_doc_snippets`, `-Wall -Wextra`, with `HF_PCAL95555_NO_GLOBAL_ALIASES` so the pages use the
+namespaced names) with the driver instantiated over the documented port. A change to the API that breaks a page breaks
+the build first. The README's example is a copy of the Quickstart snippet that `hardfoc-docs check` keeps in step.
 
 ## CI workflows
 
