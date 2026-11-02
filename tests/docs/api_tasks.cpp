@@ -7,7 +7,15 @@
 #include <cstdio>
 
 using Gpio = pcal95555::PCAL95555<MyI2c>;
+// The examples below use these names unqualified; every driver type lives in namespace pcal95555.
 using pcal95555::ChipVariant;
+using pcal95555::DriveStrength;
+using pcal95555::Error;
+using pcal95555::GPIODir;
+using pcal95555::InterruptEdge;
+using pcal95555::InterruptState;
+using pcal95555::Pcal95555Reg;
+using pcal95555::Polarity;
 
 // --8<-- [start:init]
 bool bring_up(Gpio& gpio) {

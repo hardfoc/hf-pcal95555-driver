@@ -30,9 +30,11 @@ P1_7 (port 1). Most settings come in three forms:
 | Raw registers | `ReadDualPortRegister()`, `WriteDualPortRegister()` |
 | Errors | `GetErrorFlags()`, `HasError()`, `HasAnyError()`, `ClearError()`, `ClearErrorFlags()` |
 
-The pin enums (`GPIODir`, `Polarity`, `DriveStrength`, `InterruptState`, `InterruptEdge`), `Error` and the register
-map `Pcal95555Reg` are declared at global scope by `pcal95555.hpp`; `PCAL95555`, `ChipVariant`, `PinReadResult` and
-`I2cInterface` are in namespace `pcal95555`.
+Every type is in namespace `pcal95555`: `PCAL95555`, `ChipVariant`, `PinReadResult`, `I2cInterface`, the pin enums
+(`GPIODir`, `Polarity`, `DriveStrength`, `InterruptState`, `InterruptEdge`), `Error` and the register map
+`Pcal95555Reg`; the snippets bring them in with `using pcal95555::GPIODir;` and so on. Up to 1.0.0 the pin enums,
+`Error` and `Pcal95555Reg` were global. Deprecated global aliases still accept the old spelling; define
+`HF_PCAL95555_NO_GLOBAL_ALIASES` to drop them (they go in the next major version).
 
 ## Bring the chip up
 

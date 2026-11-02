@@ -18,6 +18,8 @@
 #include "pcal95555_kconfig.hpp"
 #include "pcal95555_version.h"
 
+namespace pcal95555 {
+
 /** PCAL95555 register map (all control registers). */
 /**
  * @enum Pcal95555Reg
@@ -120,8 +122,6 @@ inline constexpr Error operator&(Error lhs, Error rhs) noexcept {
 inline constexpr Error operator~(Error e) noexcept {
   return static_cast<Error>(~static_cast<uint16_t>(e));
 }
-
-namespace pcal95555 {
 
 /**
  * @brief Fixed-capacity result container for multi-pin read operations.
@@ -1246,3 +1246,25 @@ inline const char* GetDriverVersion() noexcept {
 }
 
 } // namespace pcal95555
+
+// ---------------------------------------------------------------------------
+// Deprecated global-scope names
+// ---------------------------------------------------------------------------
+// Up to 1.0.0 these types were declared in the global namespace, where names
+// such as Error and Polarity collide with other libraries. They now live in
+// namespace pcal95555; the aliases below keep old code compiling and will be
+// removed in the next major version. Define HF_PCAL95555_NO_GLOBAL_ALIASES to
+// drop them now.
+#ifndef HF_PCAL95555_NO_GLOBAL_ALIASES
+using Pcal95555Reg = pcal95555::Pcal95555Reg;      ///< @deprecated Use pcal95555::Pcal95555Reg
+using GPIODir = pcal95555::GPIODir;                ///< @deprecated Use pcal95555::GPIODir
+using Polarity = pcal95555::Polarity;              ///< @deprecated Use pcal95555::Polarity
+using DriveStrength = pcal95555::DriveStrength;    ///< @deprecated Use pcal95555::DriveStrength
+using OutputMode = pcal95555::OutputMode;          ///< @deprecated Use pcal95555::OutputMode
+using InterruptEdge = pcal95555::InterruptEdge;    ///< @deprecated Use pcal95555::InterruptEdge
+using InterruptState = pcal95555::InterruptState;  ///< @deprecated Use pcal95555::InterruptState
+using Error = pcal95555::Error;                    ///< @deprecated Use pcal95555::Error
+using pcal95555::operator|;
+using pcal95555::operator&;
+using pcal95555::operator~;
+#endif

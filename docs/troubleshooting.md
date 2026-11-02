@@ -51,5 +51,5 @@ Start with `GetErrorFlags()` after the failing call and with an I2C scan of 0x20
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `pcal95555_version.h` not found | The include path lacks the generated directory | Link the `hf::pcal95555` target instead of adding `inc/` by hand |
-| `GPIODir` or `Error` not found in `pcal95555::` | They are declared at global scope | Write `GPIODir::Output`, not `pcal95555::GPIODir::Output` |
+| `GPIODir` or `Error` not found, or clashes with another library's `Error` | Global aliases dropped with `HF_PCAL95555_NO_GLOBAL_ALIASES`, or old global names colliding | Write `pcal95555::GPIODir::Output`, and define `HF_PCAL95555_NO_GLOBAL_ALIASES` to remove the global names |
 | Errors about C++20 features | The target compiles with an older standard | `hf::pcal95555` requires `cxx_std_20`; check the toolchain supports it |

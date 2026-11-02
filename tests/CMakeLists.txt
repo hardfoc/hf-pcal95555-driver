@@ -38,3 +38,4 @@ target_link_libraries(hf_pcal95555_doc_snippets PRIVATE ${HF_PCAL95555_TARGET_NA
 target_include_directories(hf_pcal95555_doc_snippets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/docs)
 target_compile_features(hf_pcal95555_doc_snippets PRIVATE cxx_std_20)
 target_compile_options(hf_pcal95555_doc_snippets PRIVATE -Wall -Wextra)
+target_compile_definitions(hf_pcal95555_doc_snippets PRIVATE HF_PCAL95555_NO_GLOBAL_ALIASES)
