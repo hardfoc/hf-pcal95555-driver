@@ -153,14 +153,13 @@ void pcal95555::PCAL95555<I2cType>::SetRetries(int retries) noexcept {
 // Low-level write with retries
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::writeRegister(uint8_t reg, uint8_t value) noexcept {
-  /* Stage the payload in TU static storage before the I2C write.
-   * Callers may pass a stack/external-RAM byte; some MCU memory maps do not
-   * reliably support single-byte loads from those regions into the bus DMA
-   * path, so the adapter always reads from internal SRAM/.bss. */
-  static uint8_t s_byte = 0;
-  s_byte = value;
+  /* Stage the payload in this driver object's transfer byte, not the caller's
+   * stack: on some MCU memory maps task stacks sit outside the memory the bus
+   * DMA can read. One byte per driver object (not a function-local static),
+   * so drivers for different chips do not overwrite each other's transfers. */
+  xfer_byte_ = value;
   for (int attempt = 0; attempt <= retries_; ++attempt) {
-    if (i2c_->Write(dev_addr_, reg, &s_byte, 1)) {
+    if (i2c_->Write(dev_addr_, reg, &xfer_byte_, 1)) {
       clearError(Error::I2CWriteFail);
       return true;
     }
@@ -171,11 +170,10 @@ bool pcal95555::PCAL95555<I2cType>::writeRegister(uint8_t reg, uint8_t value) no
 // Low-level read with retries
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::readRegister(uint8_t reg, uint8_t& value) noexcept {
-  static uint8_t s_byte = 0;
   for (int attempt = 0; attempt <= retries_; ++attempt) {
-    if (i2c_->Read(dev_addr_, reg, &s_byte, 1)) {
+    if (i2c_->Read(dev_addr_, reg, &xfer_byte_, 1)) {
       clearError(Error::I2CReadFail);
-      value = s_byte;
+      value = xfer_byte_;
       return true;
     }
   }
@@ -263,18 +261,17 @@ static inline uint8_t updateBit(uint8_t regVal, uint8_t bit, bool set) noexcept 
 template <typename I2cType>
 bool pcal95555::PCAL95555<I2cType>::readDualPort(uint8_t reg0, uint8_t reg1,
                                                   uint8_t& val0, uint8_t& val1) noexcept {
-  /* Dual-port assemble in TU static storage (not caller stack / external RAM).
-   * Keeps both port bytes coherent for R-M-W and avoids single-byte load
-   * hazards on MCU maps where task stacks sit outside tightly-coupled SRAM. */
-  static uint8_t s_ports[2] = {0, 0};
-  if (!readRegister(reg0, s_ports[0])) {
+  /* The bus transfer itself goes through xfer_byte_ (see readRegister). */
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  if (!readRegister(reg0, port0)) {
     return false;
   }
-  if (!readRegister(reg1, s_ports[1])) {
+  if (!readRegister(reg1, port1)) {
     return false;
   }
-  val0 = s_ports[0];
-  val1 = s_ports[1];
+  val0 = port0;
+  val1 = port1;
   return true;
 }
 
@@ -948,11 +945,11 @@ bool pcal95555::PCAL95555<I2cType>::RegisterInterruptHandler() noexcept {
 // Read current pin states (private helper)
 template <typename I2cType>
 uint16_t pcal95555::PCAL95555<I2cType>::readPinStates() noexcept {
-  /* Assemble both INPUT ports in TU static storage (see readDualPort). */
-  static uint8_t s_ports[2] = {0, 0};
-  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), s_ports[0]);
-  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1), s_ports[1]);
-  return (uint16_t(s_ports[1]) << 8) | s_ports[0];
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_0), port0);
+  readRegister(static_cast<uint8_t>(Pcal95555Reg::INPUT_PORT_1), port1);
+  return static_cast<uint16_t>((uint16_t(port1) << 8) | port0);
 }
 
 // Read all 16 pin input states (public API)
@@ -971,13 +968,13 @@ bool pcal95555::PCAL95555<I2cType>::ReadDualPortRegister(uint8_t reg0, uint8_t r
   if (!EnsureInitialized()) {
     return false;
   }
-  /* Assemble through readDualPort’s static staging buffers. */
-  static uint8_t s_ports[2] = {0, 0};
-  if (!readDualPort(reg0, reg1, s_ports[0], s_ports[1])) {
+  uint8_t port0 = 0;
+  uint8_t port1 = 0;
+  if (!readDualPort(reg0, reg1, port0, port1)) {
     return false;
   }
-  value = static_cast<uint16_t>(s_ports[0]) |
-          static_cast<uint16_t>(static_cast<uint16_t>(s_ports[1]) << 8);
+  value = static_cast<uint16_t>(port0) |
+          static_cast<uint16_t>(static_cast<uint16_t>(port1) << 8);
   return true;
 }
 

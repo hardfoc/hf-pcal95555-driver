@@ -1131,6 +1131,7 @@ private:
   bool a2_level_;
   ChipVariant chip_variant_{ChipVariant::Unknown};  // Detected or user-specified chip variant
   ChipVariant user_variant_{ChipVariant::Unknown};  // User-requested variant (for skipping detection)
+  uint8_t xfer_byte_{0};  // Bus transfer byte: lives in the driver object, one per chip
 
   /**
    * @brief Calculate I2C address from A2-A0 bits.

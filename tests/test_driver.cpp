@@ -153,6 +153,35 @@ TEST_CASE("an empty mask sets InvalidMask and sends nothing") {
   CHECK(!drv.HasError(Error::InvalidMask));
 }
 
+TEST_CASE("two drivers of one bus type do not share transfer buffers") {
+  // Two chips on two buses, the second driver used while a read of the first is in flight (another
+  // task preempting it). Each driver must get its own chip's Input Port value.
+  MockPcal95555 bus_a(true);
+  MockPcal95555 bus_b(true);
+  Driver a(&bus_a, uint8_t{0x20});
+  Driver b(&bus_b, uint8_t{0x20});
+  REQUIRE(a.EnsureInitialized());
+  REQUIRE(b.EnsureInitialized());
+  bus_a.setPins(0x00A5);
+  bus_b.setPins(0x5A00);
+  uint16_t seen_by_b = 0;
+  bus_a.setReadHook([&](uint8_t) { seen_by_b = b.ReadAllInputs(); });
+  CHECK_EQ(a.ReadAllInputs(), 0x00A5);
+  CHECK_EQ(seen_by_b, 0x5A00);
+
+  uint16_t raw_b = 0;
+  bus_a.setReadHook([&](uint8_t) { (void)b.ReadDualPortRegister(0x00, 0x01, raw_b); });
+  uint16_t raw_a = 0;
+  CHECK(a.ReadDualPortRegister(0x00, 0x01, raw_a));
+  CHECK_EQ(raw_a, 0x00A5);
+  CHECK_EQ(raw_b, 0x5A00);
+
+  bool level = false;
+  bus_a.setReadHook([&](uint8_t) { (void)b.ReadPin(0); });
+  CHECK(a.ReadPin(0, level));
+  CHECK(level);
+}
+
 TEST_CASE("invalid pins set InvalidPin and send nothing") {
   MockPcal95555 bus(true);
   Driver drv(&bus, uint8_t{0x20});
