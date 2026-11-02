@@ -22,11 +22,16 @@ namespace pcal95555 {
  * dedicated GPIO pins through the I2cInterface.
  *
  * - **INTN**: Active-low interrupt output (read-only via GpioRead)
- * - **RSTN**: Active-low hardware reset (write via GpioSet)
+ *
+ * The PCA9555 and PCAL9555A have no reset input (PCAL9555A data sheet Rev. 2,
+ * table 3; PCA9555 Rev. 10, table 3): the only reset is power-on reset, and
+ * PCAL95555::ResetToDefault() rewrites the power-up register values instead.
+ * RSTN is kept only so existing ports still compile.
  */
 enum class CtrlPin : uint8_t {
   INTN = 0, ///< Interrupt output (active-low, open-drain, read-only)
-  RSTN      ///< Hardware reset (active-low, not available on all variants)
+  RSTN [[deprecated("PCA9555/PCAL9555A have no reset pin; use ResetToDefault()")]]
+  ///< No such pin on these parts; never driven by the driver
 };
 
 /**
@@ -196,11 +201,11 @@ public:
   /**
    * @brief Set a control pin to the specified signal state.
    *
-   * @param[in] pin     Which control pin to drive (RSTN).
+   * @param[in] pin     Which control pin to drive. The chips have no output-side
+   *                    control pin, so the driver never calls this.
    * @param[in] signal  ACTIVE to assert the pin function, INACTIVE to deassert.
    *
-   * @note Default implementation is a no-op. Override in derived class if
-   *       the reset pin is wired and controllable.
+   * @note Default implementation is a no-op.
    */
   void GpioSet(CtrlPin pin, GpioSignal signal) noexcept {
     (void)pin;

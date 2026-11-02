@@ -26,7 +26,7 @@ The base class uses CRTP: the calls are resolved at compile time, so there are n
 | `Read(addr, reg, data, len)` | yes | Write `reg`, repeated START, read `len` bytes, STOP. The driver always passes `len = 1`. Return `false` on a NACK or timeout |
 | `SetAddressPins(a0, a1, a2)` | no | Drive A0-A2 from MCU GPIOs, if the board wires them; the default returns `false` |
 | `RegisterInterruptHandler(handler)` | no | Keep `handler` and run it from a task when INT falls; the default returns `false` |
-| `GpioSet(pin, signal)`, `GpioRead(pin, signal)` | no | Control-pin hooks of the HardFOC interface model; this driver does not call them, since neither chip has a reset pin |
+| `GpioSet(pin, signal)`, `GpioRead(pin, signal)` | no | Control-pin hooks of the HardFOC interface model; this driver does not call them, since neither chip has a reset pin. `CtrlPin::RSTN` is deprecated for the same reason |
 
 `addr` is the 7-bit address (0x20 to 0x27); your SDK may want it shifted left by one.
 
