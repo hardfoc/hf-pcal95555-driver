@@ -1,12 +1,3 @@
----
-layout: default
-title: "🛠️ Installation"
-description: "Installation and integration instructions for the PCAL95555 driver"
-nav_order: 1
-parent: "📚 Documentation"
-permalink: /docs/installation/
----
-
 # Installation
 
 This guide covers how to integrate the PCAL95555 driver into your project.

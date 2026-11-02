@@ -1,12 +1,3 @@
----
-layout: default
-title: "⚙️ Configuration"
-description: "Configuration options for the PCAL95555 driver"
-nav_order: 5
-parent: "📚 Documentation"
-permalink: /docs/configuration/
----
-
 # Configuration
 
 This guide covers all configuration options available for the PCAL95555 driver.

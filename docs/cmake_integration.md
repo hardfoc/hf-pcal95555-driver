@@ -1,12 +1,3 @@
----
-layout: default
-title: "⚙️ CMake Integration"
-description: "How to integrate the PCAL95555 driver into your CMake project"
-nav_order: 5
-parent: "📚 Documentation"
-permalink: /docs/cmake_integration/
----
-
 # PCAL95555 — CMake Integration Guide
 
 How to consume the PCAL95555 driver in your CMake or ESP-IDF project.

@@ -1,12 +1,3 @@
----
-layout: default
-title: "🔌 Hardware Setup"
-description: "Hardware wiring and connection guide for the PCA9555 / PCAL9555A"
-nav_order: 3
-parent: "📚 Documentation"
-permalink: /docs/hardware_setup/
----
-
 # Hardware Setup
 
 ![PCA9555 / PCAL9555A 16-bit I2C GPIO expander topology](assets/pcal95555-topology.svg)

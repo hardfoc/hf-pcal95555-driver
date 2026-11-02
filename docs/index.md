@@ -1,20 +1,10 @@
----
-layout: default
-title: "📚 Documentation"
-description: "Complete documentation for the HardFOC PCAL95555 Driver"
-nav_order: 2
-parent: "HardFOC PCAL95555 Driver"
-permalink: /docs/
-has_children: true
----
-
 # HF-PCAL95555 Documentation
 
 Welcome! This directory contains step-by-step guides for installing, building, and using the **HF-PCAL95555** library -- a hardware-agnostic C++ driver for the **PCA9555** and **PCAL9555A** 16-bit I/O expanders.
 
 The driver auto-detects which chip variant is connected and enables features accordingly. Standard PCA9555 features work on both chips; PCAL9555A-only features (pull resistors, drive strength, input latch, interrupt mask/status, output mode) degrade gracefully on a PCA9555.
 
-## 📚 Documentation Structure
+## Documentation Structure
 
 ### **Getting Started**
 
@@ -38,7 +28,7 @@ The driver auto-detects which chip variant is connected and enables features acc
 
 ---
 
-## 🚀 Quick Start Path
+## Quick Start Path
 
 **New to PCAL95555?** Follow this recommended path:
 
@@ -50,7 +40,7 @@ The driver auto-detects which chip variant is connected and enables features acc
 
 ---
 
-## 💡 Need Help?
+## Need Help?
 
 - **🐛 Found a bug?** Check the [Troubleshooting](troubleshooting.md) guide
 - **❓ Have questions?** Review the [API Reference](api_reference.md)

@@ -138,3 +138,4 @@ Thumbs.db
 # The version header is now generated into CMAKE_CURRENT_BINARY_DIR
 # so no source-tree gitignore entry is needed.  This comment is kept
 # as a breadcrumb — see cmake/hf_pcal95555_build_settings.cmake.
+site/
