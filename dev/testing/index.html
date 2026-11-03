@@ -105,6 +105,47 @@
   <meta property="og:description" content="Hardware-agnostic C++ driver for the NXP PCA9555 / PCAL9555A 16-bit I/O expanders (I2C). Part of the HardFOC ecosystem.">
   <meta property="og:url" content="https://hardfoc.github.io/hf-pcal95555-driver/latest/testing/">
   <meta name="twitter:card" content="summary">
+  <script>
+(function () {
+  if (typeof mermaid != "undefined" && !(mermaid instanceof Element)) return;
+  var SRC = "https://unpkg.com/mermaid@11/dist/mermaid.min.js", config = {}, real, loading, waiting = [];
+  var stub = {
+    initialize: function (c) { config = c || {}; if (real) real.initialize(config); },
+    render: function (id, text) {
+      var el = null, pres = document.querySelectorAll("pre.mermaid:not([data-hf-mermaid])");
+      for (var i = 0; i < pres.length && !el; i++) if (pres[i].textContent === text) el = pres[i];
+      if (el) el.setAttribute("data-hf-mermaid", "");
+      return near(el).then(load).then(function (m) { return m.render(id, text); });
+    }
+  };
+  function load() {
+    return loading || (loading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = SRC;
+      s.onload = function () {
+        real = window.mermaid;
+        window.mermaid = stub;
+        real.initialize(config);
+        resolve(real);
+      };
+      s.onerror = function () { loading = null; reject(new Error("Mermaid did not load")); };
+      document.head.appendChild(s);
+    }));
+  }
+  function near(el) {
+    if (real || !el || !("IntersectionObserver" in window)) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); resolve(); }
+      }, { rootMargin: "100% 0px" });
+      io.observe(el);
+      waiting.push(function () { io.disconnect(); resolve(); });
+    });
+  }
+  window.addEventListener("beforeprint", function () { waiting.splice(0).forEach(function (go) { go(); }); });
+  window.mermaid = stub;
+})();
+</script>
 
   </head>
   
@@ -1013,29 +1054,29 @@ read. It records every transfer, so tests check exactly what went over the bus.<
 </thead>
 <tbody>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/test_driver.cpp"><code>tests/test_driver.cpp</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/test_driver.cpp"><code>tests/test_driver.cpp</code></a></td>
 <td>Variant detection, address mapping and clamping, port-register bit placement, drive-strength encoding, pull / latch / output-mode registers, <code>ResetToDefault()</code>, interrupt callbacks on both parts, multi-pin calls, error flags, inconclusive detection, <code>ReadPin(pin, level)</code>, empty masks, independent driver objects</td>
 </tr>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/test_kconfig.cpp"><code>tests/test_kconfig.cpp</code></a></td>
-<td><code>InitFromConfig()</code> with an ESP-IDF style <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/kconfig/sdkconfig.h"><code>sdkconfig.h</code></a>, including bools set to <code>n</code></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/test_kconfig.cpp"><code>tests/test_kconfig.cpp</code></a></td>
+<td><code>InitFromConfig()</code> with an ESP-IDF style <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/kconfig/sdkconfig.h"><code>sdkconfig.h</code></a>, including bools set to <code>n</code></td>
 </tr>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/install/main.cpp"><code>tests/install/</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/install/main.cpp"><code>tests/install/</code></a></td>
 <td>CTest <code>hf_pcal95555_install</code>: <code>cmake --install</code> into a scratch prefix, then a <code>find_package(hf_pcal95555)</code> consumer builds and runs against it</td>
 </tr>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/mock_pcal95555.hpp"><code>tests/mock_pcal95555.hpp</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/mock_pcal95555.hpp"><code>tests/mock_pcal95555.hpp</code></a></td>
 <td>The PCA9555 / PCAL9555A register model, with fault injection (failed reads, a bus stuck after the probe NACK, code run mid-transfer)</td>
 </tr>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/test_harness.hpp"><code>tests/test_harness.hpp</code></a>, <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/test_main.cpp"><code>tests/test_main.cpp</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/test_harness.hpp"><code>tests/test_harness.hpp</code></a>, <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/test_main.cpp"><code>tests/test_main.cpp</code></a></td>
 <td>A dependency-free test registry and runner</td>
 </tr>
 </tbody>
 </table>
 <h2 id="documentation-snippets">Documentation snippets<a class="headerlink" href="#documentation-snippets" title="Permanent link">&para;</a></h2>
-<p>Every C++ block on this site is included from <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/tests/docs/my_i2c.hpp"><code>tests/docs/</code></a>, which the host build compiles
+<p>Every C++ block on this site is included from <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/tests/docs/my_i2c.hpp"><code>tests/docs/</code></a>, which the host build compiles
 (target <code>hf_pcal95555_doc_snippets</code>, <code>-Wall -Wextra</code>, with <code>HF_PCAL95555_NO_GLOBAL_ALIASES</code> so the pages use the
 namespaced names) with the driver instantiated over the documented port. A change to the API that breaks a page breaks
 the build first. The README's example is a copy of the Quickstart snippet that <code>hardfoc-docs check</code> keeps in step.</p>

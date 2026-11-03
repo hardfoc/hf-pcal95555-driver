@@ -105,6 +105,47 @@
   <meta property="og:description" content="Hardware-agnostic C++ driver for the NXP PCA9555 / PCAL9555A 16-bit I/O expanders (I2C). Part of the HardFOC ecosystem.">
   <meta property="og:url" content="https://hardfoc.github.io/hf-pcal95555-driver/latest/architecture/">
   <meta name="twitter:card" content="summary">
+  <script>
+(function () {
+  if (typeof mermaid != "undefined" && !(mermaid instanceof Element)) return;
+  var SRC = "https://unpkg.com/mermaid@11/dist/mermaid.min.js", config = {}, real, loading, waiting = [];
+  var stub = {
+    initialize: function (c) { config = c || {}; if (real) real.initialize(config); },
+    render: function (id, text) {
+      var el = null, pres = document.querySelectorAll("pre.mermaid:not([data-hf-mermaid])");
+      for (var i = 0; i < pres.length && !el; i++) if (pres[i].textContent === text) el = pres[i];
+      if (el) el.setAttribute("data-hf-mermaid", "");
+      return near(el).then(load).then(function (m) { return m.render(id, text); });
+    }
+  };
+  function load() {
+    return loading || (loading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = SRC;
+      s.onload = function () {
+        real = window.mermaid;
+        window.mermaid = stub;
+        real.initialize(config);
+        resolve(real);
+      };
+      s.onerror = function () { loading = null; reject(new Error("Mermaid did not load")); };
+      document.head.appendChild(s);
+    }));
+  }
+  function near(el) {
+    if (real || !el || !("IntersectionObserver" in window)) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); resolve(); }
+      }, { rootMargin: "100% 0px" });
+      io.observe(el);
+      waiting.push(function () { io.disconnect(); resolve(); });
+    });
+  }
+  window.addEventListener("beforeprint", function () { waiting.splice(0).forEach(function (go) { go(); }); });
+  window.mermaid = stub;
+})();
+</script>
 
   </head>
   
@@ -1030,14 +1071,14 @@
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
 <p>How the driver is put together: three layers, what each owns, and how one call reaches the chip.</p>
 <figure class="hf-figure">
-<img src="../diagrams/driver-layers.svg#only-light" alt="Layer diagram: the application calls the hardware-agnostic PCAL95555 driver, which owns the standard register map of both chips and the PCAL9555A-only Agile I/O bank, and uses the CRTP I2C interface, which calls the platform port you write, which drives the I2C bus and the INT line of the PCA9555 or PCAL9555A." width="1200" loading="lazy"><img src="../diagrams/driver-layers.dark.svg#only-dark" alt="Layer diagram: the application calls the hardware-agnostic PCAL95555 driver, which owns the standard register map of both chips and the PCAL9555A-only Agile I/O bank, and uses the CRTP I2C interface, which calls the platform port you write, which drives the I2C bus and the INT line of the PCA9555 or PCAL9555A." width="1200" loading="lazy">
+<img src="../diagrams/driver-layers.svg#only-light" alt="Layer diagram: the application calls the hardware-agnostic PCAL95555 driver, which owns the standard register map of both chips and the PCAL9555A-only Agile I/O bank, and uses the CRTP I2C interface, which calls the platform port you write, which drives the I2C bus and the INT line of the PCA9555 or PCAL9555A." width="1200" height="1054"><img src="../diagrams/driver-layers.dark.svg#only-dark" alt="Layer diagram: the application calls the hardware-agnostic PCAL95555 driver, which owns the standard register map of both chips and the PCAL9555A-only Agile I/O bank, and uses the CRTP I2C interface, which calls the platform port you write, which drives the I2C bus and the INT line of the PCA9555 or PCAL9555A." width="1200" height="1054">
 <figcaption>Three layers, one of them yours</figcaption>
 </figure>
 
 <details class="hf-figure-desc">
 <summary>Figure description and sources</summary>
 <p>From top to bottom. Your application talks to one PCAL95555<I2c> object per chip. The core owns the chip's register map (listed from Pcal95555Reg in inc/pcal95555.hpp): the eight standard registers both chips have, and the Agile I/O bank only the PCAL9555A answers, which the driver guards after it has detected the variant. The communication interface (pcal95555::I2cInterface in inc/pcal95555_i2c_interface.hpp) is a CRTP base: three methods are required, the rest have defaults. The platform port is the only code you write. Below it is the chip.</p>
-<p>Drawn from: <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/inc/pcal95555.hpp"><code>inc/pcal95555.hpp</code></a> <code>Pcal95555Reg</code>; <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/inc/pcal95555_i2c_interface.hpp"><code>inc/pcal95555_i2c_interface.hpp</code></a> <code>I2cInterface</code>; figure module <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/docs/diagrams/figures/driver-layers.py"><code>docs/diagrams/figures/driver-layers.py</code></a>.</p>
+<p>Drawn from: <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/inc/pcal95555.hpp"><code>inc/pcal95555.hpp</code></a> <code>Pcal95555Reg</code>; <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/inc/pcal95555_i2c_interface.hpp"><code>inc/pcal95555_i2c_interface.hpp</code></a> <code>I2cInterface</code>; figure module <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/docs/diagrams/figures/driver-layers.py"><code>docs/diagrams/figures/driver-layers.py</code></a>.</p>
 </details>
 <h2 id="the-three-layers">The three layers<a class="headerlink" href="#the-three-layers" title="Permanent link">&para;</a></h2>
 <table>
@@ -1051,12 +1092,12 @@
 <tbody>
 <tr>
 <td><strong>Core</strong>: <code>PCAL95555&lt;I2c&gt;</code></td>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/inc/pcal95555.hpp"><code>pcal95555.hpp</code></a>, <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/src/pcal95555.ipp"><code>pcal95555.ipp</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/inc/pcal95555.hpp"><code>pcal95555.hpp</code></a>, <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/src/pcal95555.ipp"><code>pcal95555.ipp</code></a></td>
 <td>Never, for a new board</td>
 </tr>
 <tr>
 <td><strong>Interface</strong>: <code>I2cInterface&lt;Self&gt;</code></td>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/inc/pcal95555_i2c_interface.hpp"><code>pcal95555_i2c_interface.hpp</code></a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/inc/pcal95555_i2c_interface.hpp"><code>pcal95555_i2c_interface.hpp</code></a></td>
 <td>Never</td>
 </tr>
 <tr>

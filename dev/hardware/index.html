@@ -105,6 +105,47 @@
   <meta property="og:description" content="Hardware-agnostic C++ driver for the NXP PCA9555 / PCAL9555A 16-bit I/O expanders (I2C). Part of the HardFOC ecosystem.">
   <meta property="og:url" content="https://hardfoc.github.io/hf-pcal95555-driver/latest/hardware/">
   <meta name="twitter:card" content="summary">
+  <script>
+(function () {
+  if (typeof mermaid != "undefined" && !(mermaid instanceof Element)) return;
+  var SRC = "https://unpkg.com/mermaid@11/dist/mermaid.min.js", config = {}, real, loading, waiting = [];
+  var stub = {
+    initialize: function (c) { config = c || {}; if (real) real.initialize(config); },
+    render: function (id, text) {
+      var el = null, pres = document.querySelectorAll("pre.mermaid:not([data-hf-mermaid])");
+      for (var i = 0; i < pres.length && !el; i++) if (pres[i].textContent === text) el = pres[i];
+      if (el) el.setAttribute("data-hf-mermaid", "");
+      return near(el).then(load).then(function (m) { return m.render(id, text); });
+    }
+  };
+  function load() {
+    return loading || (loading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = SRC;
+      s.onload = function () {
+        real = window.mermaid;
+        window.mermaid = stub;
+        real.initialize(config);
+        resolve(real);
+      };
+      s.onerror = function () { loading = null; reject(new Error("Mermaid did not load")); };
+      document.head.appendChild(s);
+    }));
+  }
+  function near(el) {
+    if (real || !el || !("IntersectionObserver" in window)) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); resolve(); }
+      }, { rootMargin: "100% 0px" });
+      io.observe(el);
+      waiting.push(function () { io.disconnect(); resolve(); });
+    });
+  }
+  window.addEventListener("beforeprint", function () { waiting.splice(0).forEach(function (go) { go(); }); });
+  window.mermaid = stub;
+})();
+</script>
 
   </head>
   
@@ -1052,8 +1093,8 @@
 <h1 id="hardware">Hardware<a class="headerlink" href="#hardware" title="Permanent link">&para;</a></h1>
 <p>What to connect between your MCU and a PCA9555 or PCAL9555A, with which bus settings, and the limits that matter
 to the host.</p>
-<p>All values here come from the <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/docs/datasheet/pcal9555a.pdf">PCAL9555A datasheet</a> (Rev. 2, December 2014) and the
-<a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/docs/datasheet/pca9555.pdf">PCA9555 datasheet</a> (Rev. 10, November 2017). When they disagree with a board's schematic,
+<p>All values here come from the <a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/docs/datasheet/pcal9555a.pdf">PCAL9555A datasheet</a> (Rev. 2, December 2014) and the
+<a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/docs/datasheet/pca9555.pdf">PCA9555 datasheet</a> (Rev. 10, November 2017). When they disagree with a board's schematic,
 the schematic wins for pin numbers.</p>
 <p><img alt="I2C wiring of one and of two PCA9555 / PCAL9555A expanders: shared SCL and SDA with 4.7 kΩ pull-ups, two
 8-bit ports and the optional INT line" class="hf-plate" src="../assets/pcal95555-wiring.svg" /></p>
@@ -1345,7 +1386,7 @@ GPIODir::Output)</code> on a port that shares a line with other drivers. A PCA95
 <h2 id="evaluation-boards">Evaluation boards<a class="headerlink" href="#evaluation-boards" title="Permanent link">&para;</a></h2>
 <p>The <a href="../examples/">ESP32 examples</a> run on an ESP32-S3 board wired to a PCA9555 or PCAL9555A breakout: SDA on GPIO4,
 SCL on GPIO5, INT on GPIO7 and A0 / A1 / A2 on GPIO45 / GPIO48 / GPIO47. The pin assignment lives in
-<a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/examples/esp32/main/esp32_pcal95555_test_config.hpp"><code>esp32_pcal95555_test_config.hpp</code></a>.</p>
+<a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/examples/esp32/main/esp32_pcal95555_test_config.hpp"><code>esp32_pcal95555_test_config.hpp</code></a>.</p>
 <h2 id="reference-documents">Reference documents<a class="headerlink" href="#reference-documents" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1356,11 +1397,11 @@ SCL on GPIO5, INT on GPIO7 and A0 / A1 / A2 on GPIO45 / GPIO48 / GPIO47. The pin
 </thead>
 <tbody>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/docs/datasheet/pcal9555a.pdf">PCAL9555A datasheet</a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/docs/datasheet/pcal9555a.pdf">PCAL9555A datasheet</a></td>
 <td>Registers including Agile I/O, electrical limits, interrupt timing</td>
 </tr>
 <tr>
-<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/c0f5ba9b93904b70af28dd4551b8a40d4ff082df/docs/datasheet/pca9555.pdf">PCA9555 datasheet</a></td>
+<td><a href="https://github.com/hardfoc/hf-pcal95555-driver/blob/cab85b5b28192256816fb59e2c6b674525047937/docs/datasheet/pca9555.pdf">PCA9555 datasheet</a></td>
 <td>The standard register set, electrical limits, packages</td>
 </tr>
 <tr>
